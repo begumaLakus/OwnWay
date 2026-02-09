@@ -72,16 +72,17 @@ git clone [https://github.com/begumaLakus/OwnWay.git](https://github.com/begumaL
 # Navigate to backend (Coming Soon)
 cd OwnWay/backend
 npm install
+```
 
 ## 👥 Contributors
 
-Şeyma Hilal Yeşildal –Frontend Developer & UI/UX Designer
+| Name | Role |
+| :--- | :--- |
+| **Şeyma Hilal Yeşildal** | Frontend Developer & UI/UX Designer |
+| **Begüm Alakuş** | Backend Developer & System Architect |
+| **Melike Arslan** | Backend Developer & Data Analyst |
+| **Nisa Çibik** | Database Architect & Frontend Developer |
 
-Begüm Alakuş – Backend Developer & System Architect
-
-Melike Arslan – Backend Developer & Data Analyst
-
-Nisa Çibik – Database Architect & Frontend Developer
-
-
-<p align="center"> Developed with ❤️ for a better academic future. </p>
+<p align="center">
+  Developed with ❤️ for a better academic future.
+</p>
