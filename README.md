@@ -81,7 +81,7 @@ npm install
 | **Şeyma Hilal Yeşildal** | Frontend Developer & UI/UX Designer |
 | **Begüm Alakuş** | Backend Developer & System Architect |
 | **Melike Arslan** | Backend Developer & Data Analyst |
-| **Nisa Çibik** | Database Architect & Frontend Developer |
+| **Nisa Çibik** | Database Architect & Data Analyst |
 
 <p align="center">
   Developed with ❤️ for a better academic future.
