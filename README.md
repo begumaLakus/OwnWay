@@ -3,7 +3,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Research-T%C3%9CB%C4%B0TAK%202209--A%20Candidate-blue?style=for-the-badge" alt="TÜBİTAK 2209-A">
   <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js">
-  <img src="https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB">
+  <img src="https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white" alt="PostgreSQL">
   <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React">
 </p>
 
