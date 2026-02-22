@@ -62,7 +62,7 @@ The system follows a modular architecture as defined in the **Preliminary Design
 
 ### 1. Prerequisites
 - Node.js (v18.x+)
-- MongoDB (Local or Atlas)
+- PostgreSQL (Local or Atlas)
 
 ### 2. Initial Setup
 ```bash
