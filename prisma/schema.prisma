@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,9 +6,95 @@ datasource db {
   provider = "postgresql"
 }
 
-model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
+model cities {
+  id                  Int                   @id @default(autoincrement())
+  city_name           String                @db.VarChar(100)
+  total_student_count Int?
+  culture_score       Float?
+  nature_score        Float?
+  social_score        Float?
+  modern_score        Float?
+  total_cost_index    Float?
+  universities        universities[]
+  user_matched_cities user_matched_cities[]
+}
+
+model departments {
+  id                   Int           @id @default(autoincrement())
+  uni_id               Int?
+  dept_name            String        @db.VarChar(255)
+  base_rank            Int?
+  base_score           Float?
+  language             String?       @db.VarChar(50)
+  quota                Int?
+  female_student_count Int?
+  male_student_count   Int?
+  universities         universities? @relation(fields: [uni_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model universities {
+  id           Int           @id @default(autoincrement())
+  city_id      Int?
+  uni_name     String        @db.VarChar(255)
+  uni_type     String?       @db.VarChar(20)
+  has_campus   Boolean?      @default(true)
+  campus_count Int?          @default(1)
+  departments  departments[]
+  cities       cities?       @relation(fields: [city_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model user_career_suggestions {
+  id              Int    @id @default(autoincrement())
+  user_id         Int?
+  occupation_name String @db.VarChar(255)
+  users           users? @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model user_matched_cities {
+  id          Int     @id @default(autoincrement())
+  user_id     Int?
+  city_id     Int?
+  match_order Int?
+  cities      cities? @relation(fields: [city_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users       users?  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_profiles {
+  user_id          Int           @id
+  first_name       String        @db.VarChar(100)
+  last_name        String        @db.VarChar(100)
+  current_location String?       @db.VarChar(100)
+  high_school      String?       @db.VarChar(255)
+  dept_type        String?       @db.VarChar(10)
+  financial_status budget_level?
+  created_at       DateTime?     @default(now()) @db.Timestamp(6)
+  personality_type String?       @db.VarChar(100)
+  users            users         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model user_test_scores {
+  user_id   Int    @id
+  culture_w Float? @default(0)
+  nature_w  Float? @default(0)
+  social_w  Float? @default(0)
+  modern_w  Float? @default(0)
+  users     users  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model users {
+  id                      Int                       @id @default(autoincrement())
+  email                   String                    @unique @db.VarChar(255)
+  password_hash           String                    @db.VarChar(255)
+  role                    String?                   @default("USER") @db.VarChar(20)
+  user_career_suggestions user_career_suggestions[]
+  user_matched_cities     user_matched_cities[]
+  user_profiles           user_profiles?
+  user_test_scores        user_test_scores?
+}
+
+enum budget_level {
+  D___k  @map("Düşük")
+  Orta
+  Y_ksek @map("Yüksek")
 }
