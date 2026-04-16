@@ -1,0 +1,19 @@
+# Çevresel Değişkenler
+.env
+
+# Veritabanı ve Veri Dosyaları
+*.xlsx
+*.csv
+hesaplanan_veriler.json
+
+# Python Geçici Dosyaları
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# İşletim Sistemi
+.DS_Store
+Thumbs.db
+
+# Yerel Kurulum Scriptleri
+grant_permissions.py
