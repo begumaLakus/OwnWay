@@ -1,37 +1,19 @@
-import { email } from "zod";
 import { prisma } from "../../config/prisma";
 
-
-const useDB = false;
-
-// geçici memory
-const users: any[] = [];
-
+// 🔹 USER BUL
 export const findUserByEmail = async (email: string) => {
-  if (useDB) {
-    return prisma.user.findUnique({
-      where: { email },
-    });
-  }
-
-  // mock
-  return users.find((u) => u.email === email);
+  return prisma.user.findUnique({
+    where: { email },
+  });
 };
 
+// 🔹 USER OLUŞTUR
 export const createUser = async (email: string, password: string) => {
-  if (useDB) {
-    return prisma.user.create({
-      data: { email, password },
-    });
-  }
-
-  //mock 
-  const user={
-    id:Date.now(),
-    email,
-    password,
-};
-
- users.push(user);
-  return user;
+  return prisma.user.create({
+    data: {
+      email,
+      password_hash: password,
+      // !!!! çok önemliiii 'role' alanını sildik, çünkü Prisma şemadaki default değeri kullanacak.
+    },
+  });
 };
