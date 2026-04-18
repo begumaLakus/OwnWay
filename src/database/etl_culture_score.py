@@ -1,5 +1,6 @@
-
 import os
+from db_config import DB
+import math
 import sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 from dotenv import load_dotenv
@@ -9,8 +10,7 @@ from openpyxl import load_workbook
 
 load_dotenv()
 
-DB = dict(host=os.getenv("DB_HOST", "127.0.0.1"), port=int(os.getenv("DB_PORT", 5432)), dbname=os.getenv("DB_NAME", "ownway_db"),
-          user=os.getenv("DB_USER"), password=os.getenv("DB_PASS"))
+
 
 CITIES = ["İstanbul", "İzmir", "Ankara", "Konya", "Antalya", "Zonguldak", "Erzurum"]
 
@@ -23,9 +23,8 @@ MAP_OGRENCI  = {"İSTANBUL": "İstanbul", "İZMİR": "İzmir", "ANKARA": "Ankara
                 "KONYA": "Konya", "ANTALYA": "Antalya", "ZONGULDAK": "Zonguldak",
                 "ERZURUM": "Erzurum"}
 
-
 def cost_index():
-    """Agirlikli maliyet endeksi (maliyett.xlsx)."""
+
     ws = load_workbook("maliyett.xlsx", data_only=True).active
     out = {}
     for r in ws.iter_rows(min_row=5, values_only=True):
@@ -38,13 +37,12 @@ def cost_index():
                 pass
     return out
 
-
 def culture_score():
-    """Min-max normalize kultur skoru 1-5 (muze.xlsx)."""
+
     ws   = load_workbook("muze.xlsx", data_only=True).active
     rows = [r for r in ws.iter_rows(min_row=4, values_only=True) if r[0]]
 
-    ref  = next(r for r in rows if str(r[0]).strip() == "Türkiye")
+    ref    = next(r for r in rows if str(r[0]).strip() == "Türkiye")
     totals = [(ref[1] or 0)+(ref[5] or 0), (ref[2] or 0)+(ref[6] or 0),
               (ref[3] or 0)+(ref[7] or 0)]
 
@@ -53,18 +51,19 @@ def culture_score():
             for j, i in enumerate((1, 2, 3))]
            for r in rows if str(r[0]).strip() in MAP_MUZE}
 
-    def mmn(key):
-        vals = [raw[s][key] for s in raw]
-        lo, hi = min(vals), max(vals)
-        return {s: (raw[s][key]-lo)/(hi-lo) if hi != lo else 1.0 for s in raw}
+    def log_mmn(key):
 
-    n = [mmn(k) for k in range(3)]
+        log_vals = {s: math.log(raw[s][key] * 1000 + 1) for s in raw}
+        lo, hi = min(log_vals.values()), max(log_vals.values())
+        span = hi - lo
+        return {s: (log_vals[s]-lo)/span if span > 0 else 0.5 for s in log_vals}
+
+    n = [log_mmn(k) for k in range(3)]
     W = [0.20, 0.35, 0.45]
     return {s: round(1 + sum(W[k]*n[k][s] for k in range(3)) * 4, 2) for s in raw}
 
-
 def student_count():
-    """Il bazinda toplam ogrenci sayisi (ogrenci.xlsx)."""
+
     ws, out = load_workbook("ogrenci.xlsx", data_only=True).active, {c: 0 for c in CITIES}
     for r in ws.iter_rows(min_row=5, values_only=True):
         if r[1] and str(r[1]).strip().upper() not in ("NAN", "TOPLAM"):
@@ -75,9 +74,8 @@ def student_count():
                     pass
     return out
 
-
 def db_write(cost, culture, student):
-   
+
     with psycopg2.connect(**DB) as conn, conn.cursor() as cur:
         cur.execute("SELECT id, city_name FROM cities;")
         existing = {name: cid for cid, name in cur.fetchall()}
@@ -100,7 +98,6 @@ def db_write(cost, culture, student):
         print("  " + "─" * 46)
         for r in cur.fetchall():
             print(f"  {r[0]:>3}  {r[1]:<14}{r[2]:>6}  {r[3]:>8}  {r[4]:>10,}")
-
 
 if __name__ == "__main__":
     cost, culture, student = cost_index(), culture_score(), student_count()

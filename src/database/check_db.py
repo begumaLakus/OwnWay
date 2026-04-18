@@ -1,4 +1,3 @@
-
 import os
 from dotenv import load_dotenv
 import psycopg2
@@ -24,22 +23,13 @@ CITY_DATA = {
 conn = psycopg2.connect(**DB_CONFIG)
 cur  = conn.cursor()
 
-cur.execute("""
-    SELECT column_name, data_type 
-    FROM information_schema.columns 
-    WHERE table_name = 'cities' 
-    ORDER BY ordinal_position;
-""")
+cur.execute()
 print("Cities tablo yapisi:")
 cols = cur.fetchall()
 for col in cols:
     print(f"  {col[0]:30s} {col[1]}")
 
-cur.execute("""
-    SELECT constraint_name, constraint_type 
-    FROM information_schema.table_constraints 
-    WHERE table_name = 'cities';
-""")
+cur.execute()
 print("\nMevcut constraints:")
 for c in cur.fetchall():
     print(f"  {c[0]:40s} {c[1]}")
