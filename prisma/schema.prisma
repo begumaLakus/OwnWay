@@ -1,19 +1,106 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
+// --- 1. KULLANICI GRUBU ---
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
+  user_id       String   @id @default(uuid())
+  email         String   @unique
+  password_hash String
+  role          String   @default("STUDENT") // Admin kontrolü için eklendi
+  created_at    DateTime @default(now())
+
+  profile      User_Profile?
+  test_scores  User_Test_Score?
+  matched_cities    User_Matched_City[]
+  career_suggestions User_Career_Suggestion[]
+}
+
+model User_Profile {
+  user_id          String   @id
+  first_name       String
+  last_name        String
+  current_location String?
+  high_school      String?
+  dept_type        String?  // SAY, SÖZ, EA
+  financial_status String?  // Düşük, Orta, Yüksek
+  personality_type String?
+  created_at       DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [user_id])
+}
+
+model User_Test_Score {
+  user_id   String @id
+  culture_w Float  @default(0)
+  nature_w  Float  @default(0)
+  social_w  Float  @default(0)
+  modern_w  Float  @default(0)
+
+  user User @relation(fields: [user_id], references: [user_id])
+}
+
+// --- 2. KAYNAK GRUBU ---
+model City {
+  city_id             Int    @id @default(autoincrement())
+  city_name           String
+  total_student_count Int    @default(0)
+  culture_score       Int    @default(0)
+  nature_score        Int    @default(0)
+  social_score        Int    @default(0)
+  modern_score        Int    @default(0)
+  total_cost_index    Int    @default(0)
+
+  universities University[]
+  matched_users User_Matched_City[]
+}
+
+model University {
+  uni_id       Int     @id @default(autoincrement())
+  city_id      Int
+  uni_name     String
+  uni_type     String  // Vakıf / Devlet
+  has_campus   Boolean @default(true)
+  campus_count Int     @default(1)
+
+  city        City         @relation(fields: [city_id], references: [city_id])
+  departments Department[]
+}
+
+model Department {
+  dept_id              Int    @id @default(autoincrement())
+  uni_id               Int
+  dept_name            String
+  base_rank            Int    @default(0)
+  base_score           Float  @default(0)
+  language             String @default("Türkçe")
+  quota                Int    @default(0)
+  female_student_count Int    @default(0)
+  male_student_count   Int    @default(0)
+
+  university University @relation(fields: [uni_id], references: [uni_id])
+}
+
+// --- 3. SONUÇ GRUBU ---
+model User_Matched_City {
+  id          Int    @id @default(autoincrement())
+  user_id     String
+  city_id     Int
+  match_order Int
+
+  user User @relation(fields: [user_id], references: [user_id])
+  city City @relation(fields: [city_id], references: [city_id])
+}
+
+model User_Career_Suggestion {
+  id              Int    @id @default(autoincrement())
+  user_id         String
+  occupation_name String
+
+  user User @relation(fields: [user_id], references: [user_id])
 }
