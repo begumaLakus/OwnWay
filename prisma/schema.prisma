@@ -12,13 +12,15 @@ model User {
   user_id       String   @id @default(uuid())
   email         String   @unique
   password_hash String
-  role          String   @default("STUDENT") // Admin kontrolü için eklendi
+  role          String   @default("STUDENT")
   created_at    DateTime @default(now())
 
-  profile      User_Profile?
-  test_scores  User_Test_Score?
-  matched_cities    User_Matched_City[]
+  profile            User_Profile?
+  test_scores        User_Test_Score?
+  matched_cities     User_Matched_City[]
   career_suggestions User_Career_Suggestion[]
+
+  @@map("users")
 }
 
 model User_Profile {
@@ -27,12 +29,14 @@ model User_Profile {
   last_name        String
   current_location String?
   high_school      String?
-  dept_type        String?  // SAY, SÖZ, EA
-  financial_status String?  // Düşük, Orta, Yüksek
+  dept_type        String?
+  financial_status String?
   personality_type String?
   created_at       DateTime @default(now())
 
-  user User @relation(fields: [user_id], references: [user_id])
+  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@map("user_profiles")
 }
 
 model User_Test_Score {
@@ -42,7 +46,9 @@ model User_Test_Score {
   social_w  Float  @default(0)
   modern_w  Float  @default(0)
 
-  user User @relation(fields: [user_id], references: [user_id])
+  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@map("user_test_scores")
 }
 
 // --- 2. KAYNAK GRUBU ---
@@ -50,26 +56,30 @@ model City {
   city_id             Int    @id @default(autoincrement())
   city_name           String
   total_student_count Int    @default(0)
-  culture_score       Int    @default(0)
-  nature_score        Int    @default(0)
-  social_score        Int    @default(0)
-  modern_score        Int    @default(0)
-  total_cost_index    Int    @default(0)
+  culture_score       Float  @default(0)
+  nature_score        Float  @default(0)
+  social_score        Float  @default(0)
+  modern_score        Float  @default(0)
+  total_cost_index    Float  @default(0)
 
-  universities University[]
+  universities  University[]
   matched_users User_Matched_City[]
+
+  @@map("cities")
 }
 
 model University {
   uni_id       Int     @id @default(autoincrement())
   city_id      Int
   uni_name     String
-  uni_type     String  // Vakıf / Devlet
+  uni_type     String
   has_campus   Boolean @default(true)
   campus_count Int     @default(1)
 
-  city        City         @relation(fields: [city_id], references: [city_id])
+  city        City         @relation(fields: [city_id], references: [city_id], onDelete: Cascade)
   departments Department[]
+
+  @@map("universities")
 }
 
 model Department {
@@ -83,7 +93,9 @@ model Department {
   female_student_count Int    @default(0)
   male_student_count   Int    @default(0)
 
-  university University @relation(fields: [uni_id], references: [uni_id])
+  university University @relation(fields: [uni_id], references: [uni_id], onDelete: Cascade)
+
+  @@map("departments")
 }
 
 // --- 3. SONUÇ GRUBU ---
@@ -93,8 +105,10 @@ model User_Matched_City {
   city_id     Int
   match_order Int
 
-  user User @relation(fields: [user_id], references: [user_id])
-  city City @relation(fields: [city_id], references: [city_id])
+  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  city City @relation(fields: [city_id], references: [city_id], onDelete: Cascade)
+
+  @@map("user_matched_cities")
 }
 
 model User_Career_Suggestion {
@@ -102,5 +116,7 @@ model User_Career_Suggestion {
   user_id         String
   occupation_name String
 
-  user User @relation(fields: [user_id], references: [user_id])
+  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@map("user_career_suggestions")
 }
