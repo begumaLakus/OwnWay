@@ -4,6 +4,7 @@ import jwt from "@fastify/jwt";
 import { ZodError } from "zod";
 
 import authRoutes from "./modules/auth/auth.route";
+import { recommendationRoutes } from "./modules/recommendation/recommendation.route";
 import { env } from "./config/env";
 import { AppError } from "./utils/AppError";
 
@@ -17,6 +18,7 @@ export const buildApp = () => {
   });
 
   app.register(authRoutes);
+  app.register(recommendationRoutes, { prefix: "/api/recommendation" });
 app.setErrorHandler((error, request, reply) => {
   if (error instanceof AppError) {
     return reply.status(error.statusCode).send({

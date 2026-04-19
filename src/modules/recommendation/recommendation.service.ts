@@ -1,39 +1,56 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../config/prisma';
 import { RecommendationEngine } from './recommendation.logic';
 
-const prisma = new PrismaClient();
+// const prisma satırını sildik çünkü yukarıdaki importtan geliyor.
 const engine = new RecommendationEngine();
 
 export class RecommendationService {
   async getPersonalizedSuggestions(userId: string) {
+    // 1. ADIM: String olan userId'yi Number'a çeviriyoruz (Çünkü DB'de Int)
+    const numericUserId = Number(userId);
+
+    if (isNaN(numericUserId)) {
+      throw new Error("Geçersiz kullanıcı kimliği.");
+    }
+
+    // 2. ADIM: Tablo isimlerini schema.prisma'daki küçük harf halleriyle güncelledik
+    const profile = await prisma.user_profiles.findUnique({ 
+      where: { user_id: numericUserId } 
+    });
     
-    const profile = await prisma.user_Profiles.findUnique({ where: { user_id: userId } });
-    const testScores = await prisma.user_Test_Scores.findUnique({ where: { user_id: userId } });
+    const testScores = await prisma.user_test_scores.findUnique({ 
+      where: { user_id: numericUserId } 
+    });
     
-    // Kariyer önerisini çek 
-    const careerSuggestion = await prisma.user_Career_Suggestions.findFirst({
-      where: { user_id: userId },
-      orderBy: { id: 'desc' } // En son yapılan test sonucu
+    const careerSuggestion = await prisma.user_career_suggestions.findFirst({
+      where: { user_id: numericUserId },
+      orderBy: { id: 'desc' } 
     });
 
+    // Veri kontrolü
     if (!profile || !testScores || !careerSuggestion) {
       throw new Error("Eksik veri: Lütfen önce profilinizi ve testlerinizi tamamlayın.");
     }
 
-    // 2. Mesleğe Uygun Bölümleri ve Şehirleri Çek 
+    // 3. ADIM: İlişki (include) isimlerini schema.prisma'ya göre düzelttik
+    // Şemanda 'departments' -> 'universities' -> 'cities' şeklinde bir zincir var.
     const matchedDepartments = await prisma.departments.findMany({
       where: {
-        dept_name: { contains: careerSuggestion.occupation_name, mode: 'insensitive' },
-        // Sayısalcıya sözel önermemek için Nisa'nın 'dept_type' verisini kullanabilirsin
+        dept_name: { 
+          contains: careerSuggestion.occupation_name, 
+          mode: 'insensitive' 
+        },
       },
       include: {
-        university: {
-          include: { city: true }
+        universities: { // Şemada 'universities' olarak geçiyor (university değil)
+          include: { 
+            cities: true // Şemada 'cities' olarak geçiyor (city değil)
+          }
         }
       }
     });
 
-    // 3. Hesapla ve Sırala
+    // 4. ADIM: Hesapla ve Sırala
     const results = engine.calculate(profile, testScores, matchedDepartments);
     return results.sort((a, b) => b.match_score - a.match_score).slice(0, 10);
   }
