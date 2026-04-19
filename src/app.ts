@@ -5,7 +5,8 @@ import { ZodError } from "zod";
 
 import authRoutes from "./modules/auth/auth.route";
 import adminRoutes from "./modules/admin/admin.route";
-import universityRoutes from "./modules/university/university.route"; // 1. University route import edildi
+import universityRoutes from "./modules/university/university.route";
+import userRoutes from ".,7modules/user/user.route"; // 1. Yeni user route import edildi
 import { env } from "./config/env";
 import { AppError } from "./utils/AppError";
 
@@ -19,9 +20,10 @@ export const buildApp = () => {
   });
 
   // 2. Modüller Kaydediliyor
-  app.register(authRoutes, { prefix: "/api/auth" }); // Daha düzenli olması için auth'a prefix ekledik
+  app.register(authRoutes, { prefix: "/api/auth" });
   app.register(adminRoutes, { prefix: "/api/admin" });
-  app.register(universityRoutes, { prefix: "/api/university" }); // 3. Harita/Keşif modülü kaydedildi
+  app.register(universityRoutes, { prefix: "/api/university" });
+  app.register(userRoutes, { prefix: "/api/user" }); // 3. Profil ve Test işlemleri kaydedildi
 
   app.setErrorHandler((error, request, reply) => {
     if (error instanceof AppError) {
