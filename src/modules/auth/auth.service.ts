@@ -1,36 +1,46 @@
 import bcrypt from "bcrypt";
 import { AppError } from "../../utils/AppError";
+import { findUserByEmail, createUser } from "./auth.repository";
+import { prisma } from "../../config/prisma"; // Profile eklemek için prisma'yı buraya da import ettik
 
-const users: any[] = [];
-
+// 🔹 REGISTER
 export const registerService = async (email: string, password: string) => {
-  // email var mı kontrol et
-  const existingUser = users.find((u) => u.email === email);
+  const existingUser = await findUserByEmail(email);
+
   if (existingUser) {
     throw new AppError("User already exists", 400);
   }
 
   const hashed = await bcrypt.hash(password, 10);
 
-  const user = {
-    id: Date.now(),
-    email,
-    password: hashed,
+  // 1. Kullanıcıyı oluştur
+  const user = await createUser(email, hashed);
+
+  // 2. Kullanıcıya boş bir profil oluştur (Nisa'nın yeni tablosu)
+  // Şimdilik isim soyisim gibi alanları boş bırakıyoruz, kullanıcı sonra güncelleyecek.
+  await prisma.user_Profile.create({
+    data: {
+      user_id: user.user_id,
+      first_name: "Yeni", // Varsayılan isim
+      last_name: "Kullanıcı", // Varsayılan soyisim
+    },
+  });
+
+  return {
+    user_id: user.user_id,
+    email: user.email,
   };
-
-  users.push(user);
-
-  return { id: user.id, email: user.email };
 };
 
+// 🔹 LOGIN
 export const loginService = async (email: string, password: string) => {
-  const user = users.find((u) => u.email === email);
+  const user = await findUserByEmail(email);
 
   if (!user) {
     throw new AppError("User not found", 404);
   }
 
-  const match = await bcrypt.compare(password, user.password);
+  const match = await bcrypt.compare(password, user.password_hash);
 
   if (!match) {
     throw new AppError("Invalid credentials", 401);

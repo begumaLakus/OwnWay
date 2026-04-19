@@ -7,95 +7,116 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model cities {
-  id                  Int                   @id @default(autoincrement())
-  city_name           String                @db.VarChar(100)
-  total_student_count Int?
-  culture_score       Float?
-  nature_score        Float?
-  social_score        Float?
-  modern_score        Float?
-  total_cost_index    Float?
-  universities        universities[]
-  user_matched_cities user_matched_cities[]
+// --- 1. KULLANICI GRUBU ---
+model User {
+  user_id       String   @id @default(uuid())
+  email         String   @unique
+  password_hash String
+  role          String   @default("STUDENT")
+  created_at    DateTime @default(now())
+
+  profile            User_Profile?
+  test_scores        User_Test_Score?
+  matched_cities     User_Matched_City[]
+  career_suggestions User_Career_Suggestion[]
+
+  @@map("users")
 }
 
-model departments {
-  id                   Int           @id @default(autoincrement())
-  uni_id               Int?
-  dept_name            String        @db.VarChar(255)
-  base_rank            Int?
-  base_score           Float?
-  language             String?       @db.VarChar(50)
-  quota                Int?
-  female_student_count Int?
-  male_student_count   Int?
-  universities         universities? @relation(fields: [uni_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+model User_Profile {
+  user_id          String   @id
+  first_name       String
+  last_name        String
+  current_location String?
+  high_school      String?
+  dept_type        String?  
+  financial_status String?  
+  personality_type String?
+  created_at       DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@map("user_profiles")
 }
 
-model universities {
-  id           Int           @id @default(autoincrement())
-  city_id      Int?
-  uni_name     String        @db.VarChar(255)
-  uni_type     String?       @db.VarChar(20)
-  has_campus   Boolean?      @default(true)
-  campus_count Int?          @default(1)
-  departments  departments[]
-  cities       cities?       @relation(fields: [city_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+model User_Test_Score {
+  user_id   String @id
+  culture_w Float  @default(0)
+  nature_w  Float  @default(0)
+  social_w  Float  @default(0)
+  modern_w  Float  @default(0)
+
+  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@map("user_test_scores")
 }
 
-model user_career_suggestions {
+// --- 2. KAYNAK GRUBU ---
+model City {
+  city_id             Int    @id @default(autoincrement())
+  city_name           String
+  total_student_count Int    @default(0)
+  culture_score       Float  @default(0) // Puanlar genelde Float olur, Melike böyle yapmış olabilir
+  nature_score        Float  @default(0)
+  social_score        Float  @default(0)
+  modern_score        Float  @default(0)
+  total_cost_index    Float  @default(0)
+
+  universities  University[]
+  matched_users User_Matched_City[]
+
+  @@map("cities")
+}
+
+model University {
+  uni_id       Int     @id @default(autoincrement())
+  city_id      Int
+  uni_name     String
+  uni_type     String  
+  has_campus   Boolean @default(true)
+  campus_count Int     @default(1)
+
+  city        City         @relation(fields: [city_id], references: [city_id], onDelete: Cascade)
+  departments Department[]
+
+  @@map("universities")
+}
+
+model Department {
+  dept_id              Int    @id @default(autoincrement())
+  uni_id               Int
+  dept_name            String
+  base_rank            Int    @default(0)
+  base_score           Float  @default(0)
+  language             String @default("Türkçe")
+  quota                Int    @default(0)
+  female_student_count Int    @default(0)
+  male_student_count   Int    @default(0)
+
+  university University @relation(fields: [uni_id], references: [uni_id], onDelete: Cascade)
+
+  @@map("departments")
+}
+
+// --- 3. SONUÇ GRUBU ---
+model User_Matched_City {
+  id          Int    @id @default(autoincrement())
+  user_id     String
+  city_id     Int
+  match_order Int
+
+  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  city City @relation(fields: [city_id], references: [city_id], onDelete: Cascade)
+
+  @@map("user_matched_cities")
+}
+
+model User_Career_Suggestion {
   id              Int    @id @default(autoincrement())
-  user_id         Int?
-  occupation_name String @db.VarChar(255)
-  users           users? @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-}
+  user_id         String
+  occupation_name String
 
-model user_matched_cities {
-  id          Int     @id @default(autoincrement())
-  user_id     Int?
-  city_id     Int?
-  match_order Int?
-  cities      cities? @relation(fields: [city_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  users       users?  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-}
+  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model user_profiles {
-  user_id          Int           @id
-  first_name       String        @db.VarChar(100)
-  last_name        String        @db.VarChar(100)
-  current_location String?       @db.VarChar(100)
-  high_school      String?       @db.VarChar(255)
-  dept_type        String?       @db.VarChar(10)
-  financial_status budget_level?
-  created_at       DateTime?     @default(now()) @db.Timestamp(6)
-  personality_type String?       @db.VarChar(100)
-  users            users         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-}
-
-model user_test_scores {
-  user_id   Int    @id
-  culture_w Float? @default(0)
-  nature_w  Float? @default(0)
-  social_w  Float? @default(0)
-  modern_w  Float? @default(0)
-  users     users  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-}
-
-model users {
-  id                      Int                       @id @default(autoincrement())
-  email                   String                    @unique @db.VarChar(255)
-  password_hash           String                    @db.VarChar(255)
-  role                    String?                   @default("USER") @db.VarChar(20)
-  user_career_suggestions user_career_suggestions[]
-  user_matched_cities     user_matched_cities[]
-  user_profiles           user_profiles?
-  user_test_scores        user_test_scores?
-}
-
-enum budget_level {
-  D___k  @map("Düşük")
-  Orta
-  Y_ksek @map("Yüksek")
+  @@map("user_career_suggestions")
 }

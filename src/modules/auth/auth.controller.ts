@@ -2,14 +2,20 @@ import { FastifyRequest, FastifyReply } from "fastify";
 import { registerService, loginService } from "./auth.service";
 import { registerSchema, loginSchema } from "./schemas/auth.schema";
 
+// 🔹 REGISTER
 export const registerController = async (request: FastifyRequest) => {
   const data = registerSchema.parse(request.body);
 
   const user = await registerService(data.email, data.password);
 
-  return user;
+  return {
+    success: true,
+    message: "User registered successfully",
+    data: user,
+  };
 };
 
+// 🔹 LOGIN
 export const loginController = async (
   request: FastifyRequest,
   reply: FastifyReply
@@ -19,7 +25,7 @@ export const loginController = async (
   const user = await loginService(data.email, data.password);
 
   const token = reply.server.jwt.sign({
-    id: user.id,
+    id: user.user_id, // 🔥 DÜZELTİLDİ
     email: user.email,
   });
 

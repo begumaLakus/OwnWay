@@ -4,7 +4,6 @@ import jwt from "@fastify/jwt";
 import { ZodError } from "zod";
 
 import authRoutes from "./modules/auth/auth.route";
-import { recommendationRoutes } from "./modules/recommendation/recommendation.route";
 import { env } from "./config/env";
 import { AppError } from "./utils/AppError";
 
@@ -18,7 +17,6 @@ export const buildApp = () => {
   });
 
   app.register(authRoutes);
-  app.register(recommendationRoutes, { prefix: "/api/recommendation" });
 app.setErrorHandler((error, request, reply) => {
   if (error instanceof AppError) {
     return reply.status(error.statusCode).send({
@@ -28,21 +26,22 @@ app.setErrorHandler((error, request, reply) => {
     });
   }
 
-  if (error instanceof ZodError) {
-    return reply.status(400).send({
+    if (error instanceof ZodError) {
+      return reply.status(400).send({
+        success: false,
+        message: error.issues[0]?.message,
+        data: null,
+      });
+    }
+
+    const err = error as Error;
+
+    return reply.status(500).send({
       success: false,
-      message: error.issues[0]?.message,
+      message: err.message || "Internal Server Error",
       data: null,
     });
-  }
-
-  const err = error as Error;
-
-  return reply.status(500).send({
-    success: false,
-    message: err.message || "Internal Server Error",
-    data: null,
   });
-});
+
   return app;
 };
