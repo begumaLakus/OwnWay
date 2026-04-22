@@ -39,7 +39,7 @@ export class RecommendationController {
       // Hata yönetimi: Servis katmanından gelen spesifik mesajları kullanıcıya ilet, 
       // diğerlerini genel bir hata mesajına çevir.
       const statusCode = error.statusCode || 500;
-      
+
       return reply.code(statusCode).send({
         success: false,
         message: error.message || "Öneriler getirilirken sunucu taraflı bir hata oluştu."

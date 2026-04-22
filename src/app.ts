@@ -15,7 +15,11 @@ import { AppError } from "./utils/AppError";
 export const buildApp = () => {
   const app = Fastify({ logger: true });
 
-  app.register(cors);
+app.register(cors, {
+  origin: true, // Şimdilik tüm bağlantılara izin veriyoruz (Geliştirme aşaması için en kolayı)
+  methods: ["GET", "POST", "PUT", "DELETE"],
+});
+
 
   app.register(jwt, {
     secret: env.JWT_SECRET,
