@@ -25,7 +25,7 @@ export const getCityDiscoveryService = async (cityName: string) => {
       name: uni.uni_name,
       features: `${uni.uni_type} - ${uni.has_campus ? 'Yerleşke Mevcut' : 'Şehir Kampüsü'} - ${uni.campus_count} Yerleşke`,
       programs: uni.departments.map(dept => ({
-        id: dept.dept_id,
+        id: dept.id,
         name: dept.dept_name,
         details: {
           rank: dept.base_rank,

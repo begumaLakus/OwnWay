@@ -4,6 +4,11 @@ import jwt from "@fastify/jwt";
 import { ZodError } from "zod";
 
 import authRoutes from "./modules/auth/auth.route";
+import adminRoutes from "./modules/admin/admin.route";
+import universityRoutes from "./modules/university/university.route";
+import userRoutes from "./modules/user/user.route"; 
+import { recommendationRoutes } from "./modules/recommendation/recommendation.route";
+
 import { env } from "./config/env";
 import { AppError } from "./utils/AppError";
 
@@ -16,15 +21,21 @@ export const buildApp = () => {
     secret: env.JWT_SECRET,
   });
 
-  app.register(authRoutes);
-app.setErrorHandler((error, request, reply) => {
-  if (error instanceof AppError) {
-    return reply.status(error.statusCode).send({
-      success: false,
-      message: error.message,
-      data: null,
-    });
-  }
+  // Modüller Kaydediliyor
+  app.register(authRoutes, { prefix: "/api/auth" });
+  app.register(adminRoutes, { prefix: "/api/admin" });
+  app.register(universityRoutes, { prefix: "/api/university" });
+  app.register(userRoutes, { prefix: "/api/user" });
+  app.register(recommendationRoutes, { prefix: "/api/recommendation" }); // Kendi rotanı da kaydet!
+
+  app.setErrorHandler((error, request, reply) => {
+    if (error instanceof AppError) {
+      return reply.status(error.statusCode).send({
+        success: false,
+        message: error.message,
+        data: null,
+      });
+    }
 
     if (error instanceof ZodError) {
       return reply.status(400).send({
