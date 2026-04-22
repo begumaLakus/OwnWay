@@ -6,7 +6,7 @@ import { ZodError } from "zod";
 import authRoutes from "./modules/auth/auth.route";
 import adminRoutes from "./modules/admin/admin.route";
 import universityRoutes from "./modules/university/university.route";
-import userRoutes from ".,7modules/user/user.route"; // 1. Yeni user route import edildi
+import userRoutes from "./modules/user/user.route"; // 1. Yeni user route import edildi
 import { env } from "./config/env";
 import { AppError } from "./utils/AppError";
 
