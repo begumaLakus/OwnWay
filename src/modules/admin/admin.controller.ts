@@ -9,7 +9,23 @@ export const getUsersHandler = async (request: FastifyRequest, reply: FastifyRep
 
 // Kullanıcı silme
 export const deleteUserHandler = async (request: any, reply: FastifyReply) => {
-  const { id } = request.params; // URL'den gelen kullanıcı ID'si
-  await deleteUserByAdmin(id);
-  return { success: true, message: "Kullanıcı başarıyla silindi" };
+  const { id } = request.params; // URL'den gelen ID (örn: "4")
+
+  // 🔥 KRİTİK DÜZELTME: 
+  // Şemada ID'ler Int olduğu için String gelen ID'yi sayıya çevirmeliyiz.
+  const numericId = parseInt(id, 10);
+
+  if (isNaN(numericId)) {
+    return reply.status(400).send({
+      success: false,
+      message: "Geçersiz kullanıcı ID formatı!"
+    });
+  }
+
+  await deleteUserByAdmin(numericId);
+  
+  return { 
+    success: true, 
+    message: "Kullanıcı ve bağlı tüm verileri başarıyla silindi." 
+  };
 };

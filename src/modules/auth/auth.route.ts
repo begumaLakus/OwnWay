@@ -1,11 +1,14 @@
 import { FastifyInstance } from "fastify";
-import { registerController, loginController } from "./auth.controller";
-import { authMiddleware } from "./auth.middleware";
-import { meController } from "./auth.controller";
+import { registerController, loginController, meController } from "./auth.controller";
+import { authenticate } from "./auth.middleware"; // Fonksiyon adını 'authenticate' olarak düzelttik
 
 export default async function authRoutes(app: FastifyInstance) {
+  // 🔹 Kayıt Ol (Public)
   app.post("/register", registerController);
+
+  // 🔹 Giriş Yap (Public)
   app.post("/login", loginController);
 
-  app.get("/me",{preHandler:authMiddleware},meController);
+  // 🔹 Profil Bilgilerim (Protected - Sadece Tokenı Olanlar)
+  app.get("/me", { preHandler: [authenticate] }, meController);
 }

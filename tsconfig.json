@@ -12,8 +12,13 @@
     "strict": true,
 
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    
+    // 🔹 EKLEDİĞİMİZ KRİTİK AYARLAR:
+    "moduleResolution": "node",     // Kütüphanelerin daha rahat bulunmasını sağlar
+    "resolveJsonModule": true,      // JSON dosyalarını (package.json vb.) import edebilmenizi sağlar
+    "forceConsistentCasingInFileNames": true // Windows/Mac arası dosya ismi uyumsuzluğunu engeller
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "prisma"]
+  "include": ["src/**/*"],          // src altındaki tüm klasörleri dahil et
+  "exclude": ["node_modules", "dist", "prisma"]
 }

@@ -4,6 +4,7 @@ import { prisma } from "../../config/prisma";
 export const findUserByEmail = async (email: string) => {
   return await prisma.user.findUnique({
     where: { email },
+    // select kısmında 'id' isimlendirmesi şemanla (id) tam uyumlu
     select: {
       id: true,
       email: true,
@@ -19,8 +20,9 @@ export const createUser = async (email: string, password_hash: string) => {
     data: {
       email,
       password_hash,
-      role: "student",
+      role: "student", // Varsayılan rolü buradan veriyoruz
     },
+    // Burası çok kritik! 'id' isminin döndüğünden emin oluyoruz
     select: {
       id: true,
       email: true,

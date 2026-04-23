@@ -5,19 +5,21 @@ export const getCityDiscoveryData = async (cityName: string) => {
     where: {
       city_name: {
         equals: cityName,
-        mode: 'insensitive' // Büyük-küçük harf hatasını önler
+        mode: 'insensitive' // "istanbul" yazınca da "İstanbul"u bulur
       }
     },
     include: {
       universities: {
         include: {
           departments: {
-            // Şeyma'nın istediği o 5 ana bölümü filtreliyoruz
             where: {
               dept_name: {
-                in: ["Bilgisayar Mühendisliği", "Tıp", "Hukuk", "Psikoloji", "İlahiyat"]
+                in: ["Bilgisayar Mühendisliği", "Tıp", "Hukuk", "Psikoloji", "İlahiyat"],
+                // Eğer veritabanında yazım farklılıkları varsa buraya da mode eklenebilir
               }
-            }
+            },
+            // Şeyma'ya taban puanlarını da gösterelim mi? 
+            // Select eklemiyoruz ki tüm departman verileri (base_rank vb.) gitsin.
           }
         }
       }

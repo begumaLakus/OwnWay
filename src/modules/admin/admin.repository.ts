@@ -4,16 +4,16 @@ import { prisma } from "../../config/prisma";
 export const getAllUsers = async () => {
   return prisma.user.findMany({
     include: {
-      profile: true, // Nisa'nın yeni şemasında ilişki ismi 'profile' oldu
+      profile: true, // Şemada User içindeki ilişki adı 'profile'
     },
   });
 };
 
-// Bir kullanıcıyı silmek için (Cascade silme aktifse profili de silinir)
-export const deleteUserById = async (userId: string) => {
+// Bir kullanıcıyı silmek için
+export const deleteUserById = async (userId: number) => { // id artık number!
   return prisma.user.delete({
     where: { 
-      user_id: userId 
+      id: userId // 🔥 KRİTİK HATA DÜZELTİLDİ: user_id değil, sadece id!
     },
   });
 };

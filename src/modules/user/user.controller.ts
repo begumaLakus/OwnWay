@@ -3,8 +3,10 @@ import * as service from "./user.service";
 
 // 🔹 PROFİL GÜNCELLEME HANDLER
 export const updateProfileHandler = async (request: any, reply: FastifyReply) => {
-  const userId = request.user.user_id; // JWT'den gelen kullanıcı ID'si
-  const profileData = request.body;    // Şeyma'nın formdan gönderdiği bilgiler
+  // 🔥 KRİTİK DÜZELTME: 
+  // Auth middleware'den gelen ID'nin adı artık 'id', 'user_id' değil!
+  const userId = request.user.id; 
+  const profileData = request.body;
 
   const updatedProfile = await service.updateProfileService(userId, profileData);
 
@@ -17,7 +19,8 @@ export const updateProfileHandler = async (request: any, reply: FastifyReply) =>
 
 // 🔹 TEST SONUÇLARINI KAYDETME HANDLER
 export const saveTestScoreHandler = async (request: any, reply: FastifyReply) => {
-  const userId = request.user.user_id;
+  // 🔥 KRİTİK DÜZELTME: Aynı şekilde burayı da 'id' yapıyoruz.
+  const userId = request.user.id;
   const scores = request.body;
 
   const savedScore = await service.saveTestScoreService(userId, scores);

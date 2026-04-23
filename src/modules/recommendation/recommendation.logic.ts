@@ -1,6 +1,6 @@
 /**
  * @file RecommendationLogic.ts
- * @description 2-Step Decision Support System (Personality-to-Profession & Lifestyle-to-University)
+ * @description Decimal-Safe 2-Step Decision Support System
  */
 
 export interface IRecommendationResult {
@@ -19,28 +19,25 @@ export class RecommendationEngine {
     financial: 0.20  
   };
 
-  /**
-   * ANA FONKSİYON: Tablolardan gelen verileri işler.
-   */
   public calculate(
     userProfile: any, 
     userScores: any, 
     departments: any[]
   ): IRecommendationResult[] {
     
-    // Güvenlik: Veri eksikse boş dön, sistemi patlatma
     if (!userProfile || !userScores || !departments) return [];
 
     return departments.map(dept => {
       const explanations: string[] = [];
 
-      // 1. ŞEHİR UYUMU (User_Test_Scores + Cities)
+      // 1. ŞEHİR UYUMU (Decimal Dönüşümü Yapıldı)
       const lifestyleScore = this.calculateLifestyleScore(userScores, dept.university.city, explanations);
 
-      // 2. AKADEMİK UYUM (User_Profiles + Departments)
+      // 2. AKADEMİK UYUM (Sıralama kontrolü)
+      // Not: userProfile içinde sıralama alanı adını kontrol et (exam_rank?)
       const academicScore = this.calculateAcademicScore(userProfile.exam_rank, dept.base_rank, explanations);
 
-      // 3. EKONOMİK UYUM (User_Profiles + Cities)
+      // 3. EKONOMİK UYUM
       const financialScore = this.calculateFinancialScore(userProfile.financial_status, dept.university.city.total_cost_index, explanations);
 
       // Toplam Ağırlıklı Puan
@@ -55,48 +52,61 @@ export class RecommendationEngine {
         dept_name: dept.dept_name,
         city_name: dept.university.city.city_name,
         match_score: Math.round(totalScore),
-        explanations: [...new Set(explanations)] // Tekrar edenleri temizle
+        explanations: [...new Set(explanations)]
       };
     });
   }
 
-  // --- PRIVATE HELPER METHODS  ---
+  // --- PRIVATE HELPER METHODS ---
 
   private calculateLifestyleScore(scores: any, city: any, expl: string[]): number {
-    // Nisa'nın culture_w, nature_w vb. verilerini şehrin puanlarıyla çarpıyoruz
-    const rawMatch = 
-      (scores.culture_w * city.culture_score) +
-      (scores.nature_w * city.nature_score) +
-      (scores.social_w * city.social_score) +
-      (scores.modern_w * city.modern_score);
+    // 🔥 KRİTİK DÜZELTME: Decimal değerleri Number'a çeviriyoruz
+    const cW = Number(scores.culture_w || 0);
+    const nW = Number(scores.nature_w || 0);
+    const sW = Number(scores.social_w || 0);
+    const mW = Number(scores.modern_w || 0);
 
-    const score = (rawMatch / 20) * 100; // 5 üzerinden 4 kategori max 20 yapar.
-    if (score >= 75) expl.push(`${city.city_name} şehri yaşam tarzı beklentilerini fazlasıyla karşılıyor.`);
+    const cS = Number(city.culture_score || 0);
+    const nS = Number(city.nature_score || 0);
+    const sS = Number(city.social_score || 0);
+    const mS = Number(city.modern_score || 0);
+
+    const rawMatch = (cW * cS) + (nW * nS) + (sW * sS) + (mW * mS);
+
+    // Skor 0-100 arasına normalize ediliyor
+    const score = (rawMatch / 20) * 100; 
+    if (score >= 75) expl.push(`${city.city_name} şehri yaşam tarzı beklentilerinize çok uygun.`);
     return score;
   }
 
   private calculateAcademicScore(studentRank: number, baseRank: number, expl: string[]): number {
-    if (!studentRank || !baseRank) return 0;
-    if (studentRank <= baseRank) {
-      expl.push("Sıralamanız bu bölüm için oldukça güvenli.");
+    const sRank = Number(studentRank);
+    const bRank = Number(baseRank);
+
+    if (!sRank || !bRank) return 50; // Veri yoksa nötr puan
+    
+    if (sRank <= bRank) {
+      expl.push("Sıralamanız bu bölümün taban sıralamasından daha iyi.");
       return 100;
     }
-    if (studentRank <= baseRank * 1.25) {
-      expl.push("Sıralamanız sınırda ancak şansınız var.");
+    if (sRank <= bRank * 1.2) {
+      expl.push("Sıralamanız bölüme yakın, yerleşme ihtimaliniz var.");
       return 60;
     }
     return 10;
   }
 
-  private calculateFinancialScore(status: string, costIndex: number, expl: string[]): number {
-    // Nisa'nın financial_status (Düşük, Orta, Yüksek) verisine göre şehir maliyeti kontrolü
+  private calculateFinancialScore(status: string, costIndex: any, expl: string[]): number {
+    const cost = Number(costIndex || 0);
+    
+    // Nisa'nın 'Düşük', 'Orta', 'Yüksek' kategorileriyle eşleşme
     if (status === 'Yüksek') return 100;
-    if (status === 'Orta' && costIndex <= 3) return 100;
-    if (status === 'Düşük' && costIndex <= 2) {
-      expl.push("Ekonomik olarak sizi yormayacak bir şehir tercihi.");
+    if (status === 'Orta' && cost <= 4) return 100;
+    if (status === 'Düşük' && cost <= 2.5) {
+      expl.push("Bütçenizi zorlamayacak ekonomik bir şehir.");
       return 100;
     }
-    expl.push("Şehir maliyeti bütçenizi biraz zorlayabilir.");
+    expl.push("Şehrin yaşam maliyeti bütçenizi biraz aşabilir.");
     return 40;
   }
 }

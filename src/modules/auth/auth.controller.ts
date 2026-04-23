@@ -4,9 +4,11 @@ import { registerSchema, loginSchema } from "./schemas/auth.schema";
 
 // 🔹 REGISTER
 export const registerController = async (request: FastifyRequest) => {
+  // Artık sadece email ve password değil, tüm body'yi parse ediyoruz (first_name vb. dahil)
   const data = registerSchema.parse(request.body);
 
-  const user = await registerService(data.email, data.password);
+  // registerService'e tüm data objesini gönderiyoruz ki profili de oluşturabilsin
+  const user = await registerService(data);
 
   return {
     success: true,
@@ -24,8 +26,10 @@ export const loginController = async (
 
   const user = await loginService(data.email, data.password);
 
+  // 🔥 KRİTİK DÜZELTME: 
+  // Yeni şemanda User tablosundaki anahtar 'id'. 'user_id' değil!
   const token = reply.server.jwt.sign({
-    id: user.user_id, // 🔥 DÜZELTİLDİ
+    id: user.id, // user_id yazarsan token undefined olur ve Şeyma login olamaz.
     email: user.email,
   });
 

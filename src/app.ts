@@ -15,24 +15,37 @@ import { AppError } from "./utils/AppError";
 export const buildApp = () => {
   const app = Fastify({ logger: true });
 
-app.register(cors, {
-  origin: true, // Şimdilik tüm bağlantılara izin veriyoruz (Geliştirme aşaması için en kolayı)
-  methods: ["GET", "POST", "PUT", "DELETE"],
-});
+  // 🔹 CORS Ayarı: Şeyma'nın frontend'den (localhost:3000 vb.) sorunsuz bağlanmasını sağlar
+  app.register(cors, {
+    origin: true, 
+    methods: ["GET", "POST", "PUT", "DELETE"],
+  });
 
-
+  // 🔹 JWT Ayarı
   app.register(jwt, {
     secret: env.JWT_SECRET,
   });
 
-  // Modüller Kaydediliyor
+  // 🔹 KRİTİK DECORATOR: authenticate middleware'inin çalışması için bu şart!
+  // Bu sayede request.user ve request.jwtVerify her yerde kullanılabilir hale gelir.
+  app.decorate("authenticate", async (request: any, reply: any) => {
+    try {
+      await request.jwtVerify();
+    } catch (err) {
+      reply.send(err);
+    }
+  });
+
+  // 🔹 Modüller Kaydediliyor (Prefix'ler standartlaştırıldı)
   app.register(authRoutes, { prefix: "/api/auth" });
   app.register(adminRoutes, { prefix: "/api/admin" });
   app.register(universityRoutes, { prefix: "/api/university" });
   app.register(userRoutes, { prefix: "/api/user" });
-  app.register(recommendationRoutes, { prefix: "/api/recommendation" }); // Kendi rotanı da kaydet!
+  app.register(recommendationRoutes, { prefix: "/api/recommendation" });
 
+  // 🔹 GLOBAL HATA YÖNETİMİ
   app.setErrorHandler((error, request, reply) => {
+    // Kendi fırlattığımız hatalar (AppError)
     if (error instanceof AppError) {
       return reply.status(error.statusCode).send({
         success: false,
@@ -41,19 +54,21 @@ app.register(cors, {
       });
     }
 
+    // Zod Doğrulama hataları
     if (error instanceof ZodError) {
       return reply.status(400).send({
         success: false,
-        message: error.issues[0]?.message,
+        message: "Veri doğrulama hatası",
+        errors: error.flatten().fieldErrors, // Detaylı hata mesajı
         data: null,
       });
     }
 
+    // Beklenmedik sunucu hataları
     const err = error as Error;
-
     return reply.status(500).send({
       success: false,
-      message: err.message || "Internal Server Error",
+      message: err.message || "Sunucu taraflı bir hata oluştu.",
       data: null,
     });
   });
