@@ -1,33 +1,36 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import * as service from "./user.service";
 
-// 🔹 PROFİL GÜNCELLEME HANDLER
-export const updateProfileHandler = async (request: any, reply: FastifyReply) => {
-  // 🔥 KRİTİK DÜZELTME: 
-  // Auth middleware'den gelen ID'nin adı artık 'id', 'user_id' değil!
-  const userId = request.user.id; 
-  const profileData = request.body;
-
-  const updatedProfile = await service.updateProfileService(userId, profileData);
-
-  return reply.status(200).send({
-    success: true,
-    message: "Profil başarıyla güncellendi.",
-    data: updatedProfile,
-  });
+// Route dosyasındaki hatayı çözen fonksiyon budur
+export const getUserProfileHandler = async (request: any, reply: FastifyReply) => {
+  try {
+    const userId = request.user.id;
+    const user = await service.getUserProfileService(userId);
+    return reply.status(200).send(user);
+  } catch (error: any) {
+    return reply.status(error.statusCode || 500).send({ 
+      success: false, 
+      message: error.message 
+    });
+  }
 };
 
-// 🔹 TEST SONUÇLARINI KAYDETME HANDLER
+export const updateProfileHandler = async (request: any, reply: FastifyReply) => {
+  try {
+    const userId = request.user.id;
+    const result = await service.updateProfileService(userId, request.body);
+    return reply.status(200).send(result);
+  } catch (error: any) {
+    return reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+  }
+};
+
 export const saveTestScoreHandler = async (request: any, reply: FastifyReply) => {
-  // 🔥 KRİTİK DÜZELTME: Aynı şekilde burayı da 'id' yapıyoruz.
-  const userId = request.user.id;
-  const scores = request.body;
-
-  const savedScore = await service.saveTestScoreService(userId, scores);
-
-  return reply.status(200).send({
-    success: true,
-    message: "Test sonuçları kaydedildi.",
-    data: savedScore,
-  });
+  try {
+    const userId = request.user.id;
+    const result = await service.saveTestScoreService(userId, request.body);
+    return reply.status(201).send(result);
+  } catch (error: any) {
+    return reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+  }
 };

@@ -115,7 +115,7 @@ const ProfileScreen = ({ user, onLogout, scores, onResetTest }) => {
       Önerilen Şehir: 
       <Text style={{ color: '#4A90E2', fontWeight: 'bold' }}>
         {/* Veritabanından gelen şehir ismini buraya bağladık */}
-        {` ${user?.recommended_city || 'Hesaplanıyor...'}`}
+        {user?.matched_cities?.[0]?.city?.city_name || ''}
       </Text>
     </Text>
               {loading ? (

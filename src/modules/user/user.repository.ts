@@ -6,14 +6,17 @@ import { prisma } from "../../config/prisma";
  */
 export const getUserWithProfile = async (userId: number) => {
   return await prisma.user.findUnique({
-    where: { 
-      id: userId 
-    },
+    where: { id: userId },
     include: {
-      profile: true,            // Şemandaki isim 'profile'
-      test_scores: true,        // Şemandaki isim 'test_scores'
-      career_suggestions: true, // Şemandaki isim 'career_suggestions'
-      matched_cities: true      // Şemandaki isim 'matched_cities'
+      profile: true,
+      test_scores: true,
+      career_suggestions: true,
+      // Şehir ismini alabilmek için iç içe (nested) include yapıyoruz:
+      matched_cities: {
+        include: {
+          city: true // Bu sayede city_name verisine ulaşabileceksin
+        }
+      }
     },
   });
 };
