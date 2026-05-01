@@ -43,6 +43,7 @@ export const buildApp = () => {
   app.register(universityRoutes, { prefix: "/api/university" });
   app.register(userRoutes, { prefix: "/api/user" });
   app.register(recommendationRoutes, { prefix: "/api/recommendation" });
+  app.register(testRoutes, { prefix: "/api/test" });
 
   // 🔹 GLOBAL HATA YÖNETİMİ
   app.setErrorHandler((error, request, reply) => {
