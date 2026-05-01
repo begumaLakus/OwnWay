@@ -19,9 +19,6 @@ model User {
   career_suggestions User_Career_Suggestion[]
   matched_cities     User_Matched_City[]
 
-  is_test_completed Boolean @default(false) 
-  last_test_date    DateTime? @updatedAt
-
   @@map("users")
 }
 
