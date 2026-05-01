@@ -1,28 +1,35 @@
 import { prisma } from "../../config/prisma";
 
-// 🔹 Email ile kullanıcı bul
 export const findUserByEmail = async (email: string) => {
   return await prisma.user.findUnique({
     where: { email },
-    // select kısmında 'id' isimlendirmesi şemanla (id) tam uyumlu
     select: {
       id: true,
       email: true,
       password_hash: true,
       role: true,
+      profile: {          // ← bunu ekledik
+        select: {
+          first_name: true,
+          last_name: true,
+          current_location: true,
+          high_school: true,
+          dept_type: true,
+          personality_type: true,
+          financial_status: true,
+        }
+      }
     },
   });
 };
 
-// 🔹 Yeni kullanıcı oluştur
 export const createUser = async (email: string, password_hash: string) => {
   return await prisma.user.create({
     data: {
       email,
       password_hash,
-      role: "student", // Varsayılan rolü buradan veriyoruz
+      role: "student",
     },
-    // Burası çok kritik! 'id' isminin döndüğünden emin oluyoruz
     select: {
       id: true,
       email: true,
