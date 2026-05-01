@@ -1,9 +1,30 @@
 import { prisma } from "../../config/prisma";
 
-// 🔹 Kullanıcının profil bilgilerini güncellemek için
+/**
+ * 🔹 Kullanıcıyı ve ilişkili olduğu tüm tabloları tek seferde çeker.
+ * Şema isimlendirmelerine (profile, test_scores vb.) göre düzeltildi.
+ */
+export const getUserWithProfile = async (userId: number) => {
+  return await prisma.user.findUnique({
+    where: { 
+      id: userId 
+    },
+    include: {
+      profile: true,            // Şemandaki isim 'profile'
+      test_scores: true,        // Şemandaki isim 'test_scores'
+      career_suggestions: true, // Şemandaki isim 'career_suggestions'
+      matched_cities: true      // Şemandaki isim 'matched_cities'
+    },
+  });
+};
+
+/**
+ * 🔹 Kullanıcının profil bilgilerini güncellemek için.
+ * Model adı 'User_Profile' ama prisma client'ta 'user_Profile' veya 'user_profile' olur.
+ */
 export const updateProfile = async (userId: number, profileData: any) => {
-  // 🔥 DÜZELTME 1: userId artık number! (Şemada Int @id)
-  return prisma.user_Profile.update({
+  // @ts-ignore: Model ismi büyük/küçük harf çakışmasını önlemek için
+  return await prisma.user_Profile.update({
     where: { user_id: userId },
     data: {
       first_name: profileData.first_name,
@@ -12,16 +33,17 @@ export const updateProfile = async (userId: number, profileData: any) => {
       high_school: profileData.high_school,
       dept_type: profileData.dept_type, 
       financial_status: profileData.financial_status,
-      personality_type: profileData.personality_type // Şemada bu da vardı, ekledim.
+      personality_type: profileData.personality_type
     },
   });
 };
 
-// 🔹 Test sonuçlarını kaydetmek/güncellemek için
+/**
+ * 🔹 Test sonuçlarını kaydetmek veya güncellemek için.
+ */
 export const saveTestScores = async (userId: number, scores: any) => {
-  // 🔥 DÜZELTME 2: 'upsert' içindeki 'user_id' benzersiz olmalı. 
-  // Ayrıca scores içindeki gereksiz alanları ayıklıyoruz.
-  return prisma.user_Test_Score.upsert({
+  // @ts-ignore: Model ismi büyük/küçük harf çakışmasını önlemek için
+  return await prisma.user_Test_Score.upsert({
     where: { user_id: userId },
     update: {
       culture_w: scores.culture_w,

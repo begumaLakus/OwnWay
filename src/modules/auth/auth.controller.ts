@@ -1,15 +1,12 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import { registerService, loginService } from "./auth.service";
 import { registerSchema, loginSchema } from "./schemas/auth.schema";
+import { getUserProfileService } from "../user/user.service";
 
 // 🔹 REGISTER
 export const registerController = async (request: FastifyRequest) => {
-  // Artık sadece email ve password değil, tüm body'yi parse ediyoruz (first_name vb. dahil)
   const data = registerSchema.parse(request.body);
-
-  // registerService'e tüm data objesini gönderiyoruz ki profili de oluşturabilsin
   const user = await registerService(data);
-
   return {
     success: true,
     message: "User registered successfully",
@@ -23,28 +20,45 @@ export const loginController = async (
   reply: FastifyReply
 ) => {
   const data = loginSchema.parse(request.body);
+  const user = await loginService(data.email, data.password) as any;
 
-  const user = await loginService(data.email, data.password);
-
-  // 🔥 KRİTİK DÜZELTME: 
-  // Yeni şemanda User tablosundaki anahtar 'id'. 'user_id' değil!
   const token = reply.server.jwt.sign({
-    id: user.id, // user_id yazarsan token undefined olur ve Şeyma login olamaz.
+    id: user.id,
     email: user.email,
   });
 
+  // Service artık profile'ı düz döndürüyor, user.profile değil direkt user.first_name
   return {
     success: true,
     message: "Login successful",
-    data: { token },
+    data: {
+      token,
+      first_name: user.first_name || "",
+      last_name: user.last_name || "",
+      email: user.email,
+      id: user.id,
+      current_location: user.current_location || "",
+      high_school: user.high_school || "",
+      dept_type: user.dept_type || "",
+      personality_type: user.personality_type || "",
+    },
   };
 };
 
-// 🔹 ME (protected route)
+// 🔹 ME
 export const meController = async (request: any) => {
-  return {
-    success: true,
-    message: "User data",
-    data: request.user,
-  };
+  try {
+    const userId = request.user.id;
+    const fullUserData = await getUserProfileService(userId);
+    return {
+      success: true,
+      message: "User profile data retrieved",
+      data: fullUserData,
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error.message || "Profil bilgileri alınamadı",
+    };
+  }
 };

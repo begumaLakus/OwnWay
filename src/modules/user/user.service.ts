@@ -1,9 +1,32 @@
 import * as repo from "./user.repository";
 import { AppError } from "../../utils/AppError";
 
-// 🔹 PROFİL GÜNCELLEME SERVİSİ
+/**
+ * 🔹 KULLANICI PROFİLİNİ GETİRME SERVİSİ
+ * Şeyma'nın profil sayfasındaki boşlukları dolduracak olan asıl veri buradan gider.
+ */
+export const getUserProfileService = async (userId: any) => {
+  const numericUserId = Number(userId);
+
+  if (isNaN(numericUserId)) {
+    throw new AppError("Geçersiz kullanıcı kimliği.", 400);
+  }
+
+  // Repository katmanından kullanıcıyı profiliyle birlikte çekiyoruz
+  const user = await repo.getUserWithProfile(numericUserId);
+
+  if (!user) {
+    throw new AppError("Kullanıcı bulunamadı.", 404);
+  }
+
+  return user;
+};
+
+/**
+ * 🔹 PROFİL GÜNCELLEME SERVİSİ
+ * Kullanıcı bilgilerini güncellediğinde çalışır.
+ */
 export const updateProfileService = async (userId: any, profileData: any) => {
-  // 🔥 DÜZELTME 1: ID'yi garantiye almak için sayıya çeviriyoruz
   const numericUserId = Number(userId);
 
   if (isNaN(numericUserId)) {
@@ -18,7 +41,10 @@ export const updateProfileService = async (userId: any, profileData: any) => {
   return await repo.updateProfile(numericUserId, profileData);
 };
 
-// 🔹 TEST PUANLARINI KAYDETME SERVİSİ
+/**
+ * 🔹 TEST PUANLARINI KAYDETME SERVİSİ
+ * Şehir önerisi testinden gelen verileri Nisa'nın DB şemasına göre formatlar.
+ */
 export const saveTestScoreService = async (userId: any, scores: any) => {
   const numericUserId = Number(userId);
 
@@ -26,8 +52,8 @@ export const saveTestScoreService = async (userId: any, scores: any) => {
     throw new AppError("Geçersiz kullanıcı kimliği.", 400);
   }
 
-  // 🔹 Şeyma'nın frontend'den gönderdiği isimleri, 
-  // Nisa'nın veritabanındaki (culture_w vb.) isimlerle eşleştiriyoruz.
+  // Şeyma'nın frontend'den gönderdiği (culture, nature vb.) isimleri, 
+  // Nisa'nın veritabanındaki (culture_w vb.) kolon isimleriyle eşleştiriyoruz.
   const formattedScores = {
     culture_w: scores.culture ?? 0.5,
     nature_w: scores.nature ?? 0.5,
