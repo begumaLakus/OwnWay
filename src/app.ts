@@ -3,6 +3,7 @@ import cors from "@fastify/cors";
 import jwt from "@fastify/jwt";
 import { ZodError } from "zod";
 
+import testRoutes from "./modules/test/test.route";
 import authRoutes from "./modules/auth/auth.route";
 import adminRoutes from "./modules/admin/admin.route";
 import universityRoutes from "./modules/university/university.route";
