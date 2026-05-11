@@ -21,11 +21,11 @@ export const getCityDiscoveryService = async (cityName: string) => {
         social: { score: Number(cityData.social_score || 0), label: "Sosyal" }
       }
     },
-    universities: cityData.universities.map(uni => ({
+    universities: cityData.universities.map((uni: any) => ({
       name: uni.uni_name,
       features: `${uni.uni_type} - ${uni.has_campus ? 'Yerleşke Mevcut' : 'Şehir Kampüsü'}`,
       campus_info: `${uni.campus_count || 0} Yerleşke Bulunuyor`,
-      programs: uni.departments.map(dept => {
+      programs: uni.departments.map((dept: any) => {
         // Cinsiyet oranını daha okunaklı yapalım (Toplamı alıp yüzdeye çevirebiliriz ama şu anki haliyle de sayıları garantiye alalım)
         const female = Number(dept.female_student_count || 0);
         const male = Number(dept.male_student_count || 0);

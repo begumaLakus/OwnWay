@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
-import { submitCityTest } from '../services/testService';
+import api from './api';
 
 const TestScreen = ({ navigation }) => {
   const [answers, setAnswers] = useState({}); 
@@ -59,9 +59,10 @@ const TestScreen = ({ navigation }) => {
 
     try {
       // 2. Begüm'e giden JSON: payload
-      const response = await submitCityTest(payload);
+      const response = await api.post('/test/submit', payload); // Backend test endpointinize göre burayı güncelleyin
       navigation.navigate('ResultScreen', { cities: response.data });
     } catch (error) {
+      console.log(error);
       Alert.alert("Hata", "Puanlar gönderilemedi.");
     } finally {
       setLoading(false);

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, Dimensions, ActivityIndicator, ScrollView as RNScrollView, Alert } from 'react-native';
+import api from './src/screens/api';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -15,12 +16,17 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const Tab = createBottomTabNavigator();
 
 export default function App() {
-  const [user, setUser] = useState(null); 
-  const [appState, setAppState] = useState('login'); 
-  
-  // Analiz için gerekli olan eksik state'ler:
+  const [user, setUser] = useState(null);
+  const [appState, setAppState] = useState('login');
+
+  // Form (analiz) state
   const [currentQ, setCurrentQ] = useState(0);
   const [userScores, setUserScores] = useState({ culture: 0, modern: 0, social: 0, nature: 0 });
+
+  // Öneri sonuçları state
+  const [recommendedCities, setRecommendedCities] = useState([]);
+  const [citiesLoading, setCitiesLoading] = useState(false);
+  const [citiesError, setCitiesError] = useState(null);
 
   // 1. GİRİŞ EKRANI
   if (appState === 'login') {
@@ -47,7 +53,7 @@ export default function App() {
     );
   }
 
-// 3. ANALİZ FORMU EKRANI (Hata Giderilmiş & 8 Soru Tam Liste)
+// 3. ANALİZ FORMU EKRANI (12 Soru — 3 soru/kategori)
   if (appState === 'form') {
     const questions = [
       { q: "Hafta sonu sabahı ilk planın ne olur?", options: [{ text: "Tarihi bir bölgeyi veya müzeyi gezmek.", cat: "culture" }, { text: "Şehrin en popüler AVM'sini görmek.", cat: "modern" }, { text: "Kalabalık bir kafede arkadaşlarla buluşmak.", cat: "social" }, { text: "Ormanda sessiz bir yürüyüş yapmak.", cat: "nature" }] },
@@ -57,26 +63,72 @@ export default function App() {
       { q: "Fotoğraf galerinde en çok hangisi olsun istersin?", options: [{ text: "Antik kent kalıntıları veya sergi kareleri.", cat: "culture" }, { text: "Işıltılı şehir silüeti ve modern mimari.", cat: "modern" }, { text: "Konserlerden ve partilerden anlar.", cat: "social" }, { text: "Gün batımı ve doğal su kaynakları.", cat: "nature" }] },
       { q: "Bir akşam dışarı çıkacak olsan tercihin ne olurdu?", options: [{ text: "Opera, tiyatro veya klasik müzik.", cat: "culture" }, { text: "Işıltılı bir rooftop bar.", cat: "modern" }, { text: "Sokak lezzetleri ve yerel halkla sohbet.", cat: "social" }, { text: "Yıldızların altında sahil yürüyüşü.", cat: "nature" }] },
       { q: "Hangi ulaşım aracını kullanmak seni daha mutlu eder?", options: [{ text: "Nostaljik tramvay veya tarihi bir vapur.", cat: "culture" }, { text: "Hızlı tren veya elektrikli bir scooter.", cat: "modern" }, { text: "Paylaşımlı bir bisiklet turu.", cat: "social" }, { text: "Tekne turu veya orman içi bisiklet yolu.", cat: "nature" }] },
-      { q: "Hayalindeki hediye hangisi olurdu?", options: [{ text: "Nadir bulunan eski bir kitap.", cat: "culture" }, { text: "En son çıkan teknolojik bir alet.", cat: "modern" }, { text: "Büyük bir festival veya konser bileti.", cat: "social" }, { text: "Botanik bahçesi turu veya çiçekler.", cat: "nature" }] }
+      { q: "Hayalindeki hediye hangisi olurdu?", options: [{ text: "Nadir bulunan eski bir kitap.", cat: "culture" }, { text: "En son çıkan teknolojik bir alet.", cat: "modern" }, { text: "Büyük bir festival veya konser bileti.", cat: "social" }, { text: "Botanik bahçesi turu veya çiçekler.", cat: "nature" }] },
+      { q: "Tatilde tercih edeceğin aktivite hangisi?", options: [{ text: "Müze, galeri veya tarihi mekân turu.", cat: "culture" }, { text: "Teknoloji fuarı veya yenilikçi bir etkinlik.", cat: "modern" }, { text: "Yerel halkla festival veya geleneksel şenlik.", cat: "social" }, { text: "Kamp, trekking veya mağara keşfi.", cat: "nature" }] },
+      { q: "Üniversite kampüsü nasıl olsun istersin?", options: [{ text: "Tarihi ve mimari açıdan görkemli binalar.", cat: "culture" }, { text: "Akıllı teknoloji donanımlı, çağdaş bir kampüs.", cat: "modern" }, { text: "Kulüp ve etkinliklerle dolu canlı bir ortam.", cat: "social" }, { text: "Ormanlık alan veya deniz kenarında doğayla iç içe.", cat: "nature" }] },
+      { q: "Serbest zamanında hangi içerikle vakit geçirirsin?", options: [{ text: "Tarihi belgeseller veya klasik edebiyat.", cat: "culture" }, { text: "Teknoloji haberleri veya startup podcast'leri.", cat: "modern" }, { text: "Arkadaşlarla sosyal medya veya canlı yayınlar.", cat: "social" }, { text: "Vahşi yaşam belgeselleri veya açık hava vlogu.", cat: "nature" }] },
+      { q: "Gelecekte yaşamak istediğin ortam nasıl olsun?", options: [{ text: "Sanat galerileri ve müzelerle dolu tarihi bir semt.", cat: "culture" }, { text: "Gökdelenlerin hâkim olduğu modern bir iş bölgesi.", cat: "modern" }, { text: "Her gece bir etkinlik olan dinamik, canlı bir mahalle.", cat: "social" }, { text: "Şehir gürültüsünden uzak, yeşil ve sakin bir alan.", cat: "nature" }] }
     ];
 
-    const handleAnswer = (cat) => {
-  // Puanı güncelle
-  setUserScores(prev => ({ ...prev, [cat]: (prev[cat] || 0) + 1 }));
+    const handleAnswer = async (cat) => {
+  // 1. Lokal puanı güncelle
+  const newScores = { ...userScores, [cat]: (userScores[cat] || 0) + 1 };
+  setUserScores(newScores);
 
-  // Soru geçiş mantığı
-  if (currentQ < 7) { // 8 soru olduğu için max index 7'dir
+  if (currentQ < questions.length - 1) {
+    // Sonraki soruya geç
     setCurrentQ(prev => prev + 1);
   } else {
-    // Son sorudaysa sonuç sayfasına git
+    // Son soru: Puanları backend'e gönder ve sonuç sayfasına git
+    // 8 soru, her kategoride 2 soru var → max puan = 2, 0-100 arasına normalize et
+    const total = questions.length; // 8 soru → her kategori max total puan alabilir
+    const payload = {
+      culture_w: Math.round(((newScores.culture || 0) / total) * 100),
+      modern_w:  Math.round(((newScores.modern  || 0) / total) * 100),
+      social_w:  Math.round(((newScores.social  || 0) / total) * 100),
+      nature_w:  Math.round(((newScores.nature  || 0) / total) * 100),
+    };
+
+    try {
+      // POST /api/user/test-scores
+      await api.post('/user/test-scores', payload, {
+        headers: { Authorization: `Bearer ${user?.token}` },
+      });
+    } catch (e) {
+      // Göndermede hata olsa bile kullanıcıyı result'a yönlendir,
+      // hata recommendation sayfasında zaten yakalanacak.
+      console.warn('Test skorları gönderilemedi:', e?.response?.data || e.message);
+    }
+
+    setCurrentQ(0);
+    setUserScores({ culture: 0, modern: 0, social: 0, nature: 0 });
     setAppState('result');
-    // Buradaki setCurrentQ(0) işlemini result sayfasındaki butona da koyabilirsin
   }
 };
 
+    const handleExitTest = () => {
+      Alert.alert(
+        'Testi Durdur',
+        'Testi yarıda bırakmak istediğine emin misin? İlerleme kaydedilmeyecek.',
+        [
+          { text: 'Devam Et', style: 'cancel' },
+          {
+            text: 'Çık',
+            style: 'destructive',
+            onPress: () => {
+              setCurrentQ(0);
+              setUserScores({ culture: 0, modern: 0, social: 0, nature: 0 });
+              // Kullanıcı zaten giriş yapmış, ana sayfaya dön
+              setAppState(user ? 'main' : 'login');
+            },
+          },
+        ]
+      );
+    };
+
     return (
       <View style={styles.formContainer}>
-      {/* ÜST BAR: Geri Butonu ve Progress Bar */}
+      {/* ÜST BAR: Geri Butonu, Progress Bar ve Çıkış Butonu */}
       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 40, marginTop: 20 }}>
         
         {/* İlk soruda değilsek Geri butonu görünsün */}
@@ -88,13 +140,21 @@ export default function App() {
             <Ionicons name="arrow-back" size={24} color="#AEC6CF" />
           </TouchableOpacity>
         ) : (
-          <View style={{ width: 39 }} /> // Hizalamanın bozulmaması için boşluk
+          <View style={{ width: 39 }} />
         )}
 
-        {/* İlerleme Çubuğu (Flex: 1 ekledik ki boşluğu doldursun) */}
+        {/* İlerleme Çubuğu */}
         <View style={[styles.progressContainer, { flex: 1, marginBottom: 0 }]}>
           <View style={[styles.progressBar, { width: `${((currentQ + 1) / questions.length) * 100}%` }]} />
         </View>
+
+        {/* Testi Durdur (✕) Butonu */}
+        <TouchableOpacity
+          onPress={handleExitTest}
+          style={{ marginLeft: 15, width: 32, height: 32, borderRadius: 16, backgroundColor: '#FFF0F0', justifyContent: 'center', alignItems: 'center' }}
+        >
+          <Ionicons name="close" size={18} color="#FF3B30" />
+        </TouchableOpacity>
       </View>
       
       <Text style={styles.formQuestion}>{questions[currentQ].q}</Text>
@@ -114,33 +174,11 @@ export default function App() {
 
   // 4. ANALİZ SONUÇ SAYFASI
   if (appState === 'result') {
-    return (
-      <View style={styles.resultContainer}>
-        <View style={{ height: 60 }} />
-        <View style={styles.resultHeader}>
-          <View style={styles.resultCircle}>
-            <Text style={{ fontSize: 50 }}>✨</Text>
-          </View>
-          <Text style={styles.resultMainTitle}>Analiz Tamamlandı!</Text>
-          <Text style={styles.resultSubTitle}>
-            Karakter puanların veritabanına işlendi. Şimdi sana en uygun şehirleri keşfedebilirsin.
-          </Text>
-        </View>
-
-        <View style={styles.resultContent}>
-          <View style={styles.emptyCardPlaceholder}>
-            <Text style={styles.placeholderText}>Şehir önerileri yükleniyor...</Text>
-          </View>
-        </View>
-
-        <View style={styles.resultFooter}>
-          <TouchableOpacity style={styles.finishBtn} onPress={() => setAppState('main')}>
-            <Text style={styles.finishBtnText}>Tamamlandı</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={{ height: 40 }} />
-      </View>
-    );
+    return <ResultScreen
+      user={user}
+      onFinish={() => setAppState('main')}
+      onRetry={() => { setCurrentQ(0); setUserScores({ culture: 0, modern: 0, social: 0, nature: 0 }); setAppState('form'); }}
+    />;
   }
 
   // 5. ANA UYGULAMA (Giriş tamamlandıktan sonra)
@@ -172,7 +210,161 @@ export default function App() {
   );
 }
 
+// ─── RESULT SCREEN BİLEŞENİ ─────────────────────────────────────────────────
+function ResultScreen({ user, onFinish, onRetry }) {
+  const [cities, setCities] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchCities = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await api.get('/recommendation/me', {
+          headers: { Authorization: `Bearer ${user?.token}` },
+        });
+        // API { success, count, data: [...] } döndürüyor
+        // Bölüm listesini şehir bazında tekilleştir, en yüksek skoru al
+        const rawList = response?.data?.data || [];
+        const cityMap = new Map();
+        rawList.forEach((item) => {
+          if (!cityMap.has(item.city_name) || item.match_score > cityMap.get(item.city_name).match_score) {
+            cityMap.set(item.city_name, item);
+          }
+        });
+        // İlk 3 benzersiz şehri al (en yüksek skordan itibaren)
+        const uniqueCities = Array.from(cityMap.values())
+          .sort((a, b) => b.match_score - a.match_score)
+          .slice(0, 3);
+        setCities(uniqueCities);
+      } catch (e) {
+        const msg = e?.response?.data?.message || 'Öneriler yüklenemedi. Lütfen tekrar deneyin.';
+        setError(msg);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCities();
+  }, []);
+
+  return (
+    <RNScrollView style={resultStyles.container} contentContainerStyle={resultStyles.content}>
+      {/* Başlık */}
+      <View style={resultStyles.header}>
+        <View style={resultStyles.circle}>
+          <Text style={{ fontSize: 48 }}>✨</Text>
+        </View>
+        <Text style={resultStyles.mainTitle}>Analiz Tamamlandı!</Text>
+        <Text style={resultStyles.subTitle}>
+          Karakterine göre sana en uygun 3 şehir aşağıda sıralanıyor.
+        </Text>
+      </View>
+
+      {/* İçerik */}
+      {loading ? (
+        <View style={resultStyles.centerBox}>
+          <ActivityIndicator size="large" color="#4A90E2" />
+          <Text style={resultStyles.loadingText}>Şehirler hesaplanıyor...</Text>
+        </View>
+      ) : error ? (
+        <View style={resultStyles.centerBox}>
+          <Text style={resultStyles.errorText}>{error}</Text>
+          <TouchableOpacity style={resultStyles.retryBtn} onPress={onRetry}>
+            <Text style={resultStyles.retryBtnText}>Testi Tekrar Çöz</Text>
+          </TouchableOpacity>
+        </View>
+      ) : cities.length === 0 ? (
+        <View style={resultStyles.centerBox}>
+          <Text style={resultStyles.errorText}>Henüz bir öneri bulunamadı.</Text>
+          <TouchableOpacity style={resultStyles.retryBtn} onPress={onRetry}>
+            <Text style={resultStyles.retryBtnText}>Testi Tekrar Çöz</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <>
+          {cities.map((item, index) => (
+            <View key={item.city_name + index} style={resultStyles.cityCard}>
+              {/* Sıra rozeti */}
+              <View style={resultStyles.rankBadge}>
+                <Text style={resultStyles.rankText}>#{index + 1}</Text>
+              </View>
+              <View style={resultStyles.cardBody}>
+                <Text style={resultStyles.cityName}>{item.city_name}</Text>
+                {/* Uyum çubuğu */}
+                <View style={resultStyles.scoreRow}>
+                  <View style={resultStyles.scoreBarBg}>
+                    <View style={[resultStyles.scoreBarFill, { width: `${Math.min(Math.max(item.match_score, 0), 100)}%` }]} />
+                  </View>
+                  <Text style={resultStyles.scoreLabel}>%{Math.round(Math.min(item.match_score, 100))} uyum</Text>
+                </View>
+                {/* Açıklamalar */}
+                {item.explanations?.length > 0 && (
+                  <Text style={resultStyles.explanation}>{item.explanations[0]}</Text>
+                )}
+              </View>
+            </View>
+          ))}
+        </>
+      )}
+
+      {/* Alt butonlar */}
+      <View style={resultStyles.footer}>
+        <TouchableOpacity style={resultStyles.retryBtn} onPress={onRetry}>
+          <Text style={resultStyles.retryBtnText}>Testi Tekrar Çöz</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={resultStyles.finishBtn} onPress={onFinish}>
+          <Text style={resultStyles.finishBtnText}>Ana Sayfaya Git</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={{ height: 40 }} />
+    </RNScrollView>
+  );
+}
+
+const resultStyles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#F8FBFF' },
+  content: { paddingHorizontal: 25, paddingTop: 60, paddingBottom: 30 },
+  header: { alignItems: 'center', marginBottom: 30 },
+  circle: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#E8F0FE', justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  mainTitle: { fontSize: 24, fontWeight: 'bold', color: '#1A1A2E', marginBottom: 8 },
+  subTitle: { fontSize: 14, color: '#8E8E93', textAlign: 'center', lineHeight: 20 },
+  centerBox: { alignItems: 'center', paddingVertical: 40 },
+  loadingText: { marginTop: 16, color: '#8E8E93', fontSize: 14 },
+  errorText: { color: '#FF3B30', fontSize: 15, textAlign: 'center', marginBottom: 20 },
+  cityCard: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    marginBottom: 16,
+    padding: 16,
+    shadowColor: '#4A90E2',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#EEF4FF',
+  },
+  rankBadge: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#4A90E2', justifyContent: 'center', alignItems: 'center', marginRight: 14, marginTop: 2 },
+  rankText: { color: '#FFF', fontWeight: 'bold', fontSize: 14 },
+  cardBody: { flex: 1 },
+  cityName: { fontSize: 17, fontWeight: 'bold', color: '#1A1A2E', marginBottom: 2 },
+  uniName: { fontSize: 13, color: '#4A90E2', fontWeight: '600', marginBottom: 2 },
+  deptName: { fontSize: 12, color: '#8E8E93', marginBottom: 10 },
+  scoreRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  scoreBarBg: { flex: 1, height: 6, backgroundColor: '#EEF4FF', borderRadius: 3, marginRight: 8 },
+  scoreBarFill: { height: 6, backgroundColor: '#4A90E2', borderRadius: 3 },
+  scoreLabel: { fontSize: 12, color: '#4A90E2', fontWeight: 'bold', minWidth: 60, textAlign: 'right' },
+  explanation: { fontSize: 12, color: '#8E8E93', fontStyle: 'italic', lineHeight: 16 },
+  footer: { marginTop: 10, gap: 12 },
+  retryBtn: { backgroundColor: '#F0F4FF', paddingVertical: 14, borderRadius: 16, alignItems: 'center', borderWidth: 1, borderColor: '#4A90E2' },
+  retryBtnText: { color: '#4A90E2', fontWeight: 'bold', fontSize: 15 },
+  finishBtn: { backgroundColor: '#4A90E2', paddingVertical: 16, borderRadius: 16, alignItems: 'center' },
+  finishBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
+});
+
 const styles = StyleSheet.create({
+
   // Analiz Formu Stilleri
   formContainer: { flex: 1, backgroundColor: '#FFF', justifyContent: 'center', padding: 30 },
   progressContainer: { height: 4, backgroundColor: '#F0F0F0', borderRadius: 2, marginBottom: 40 },

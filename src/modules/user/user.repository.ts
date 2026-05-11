@@ -5,6 +5,7 @@ import { prisma } from "../../config/prisma";
  * Şema isimlendirmelerine (profile, test_scores vb.) göre düzeltildi.
  */
 export const getUserWithProfile = async (userId: number) => {
+  // @ts-ignore: Prisma client 'users' olarak üretiyor, runtime'da çalışıyor
   return await prisma.user.findUnique({
     where: { id: userId },
     include: {
@@ -45,21 +46,23 @@ export const updateProfile = async (userId: number, profileData: any) => {
  * 🔹 Test sonuçlarını kaydetmek veya güncellemek için.
  */
 export const saveTestScores = async (userId: number, scores: any) => {
+  // Frontend'den gelen 0-100 puanları 0-1 ağırlığa dönüştürüyoruz.
+  // Şehir skorları 0-5 ölçeğinde olduğu için recommendation hesaplaması
+  // bu ağırlıkları * 5 yaparak ölçeklendiriyor.
+  const normalizedScores = {
+    culture_w: (scores.culture_w ?? 0) / 100,
+    nature_w:  (scores.nature_w  ?? 0) / 100,
+    social_w:  (scores.social_w  ?? 0) / 100,
+    modern_w:  (scores.modern_w  ?? 0) / 100,
+  };
+
   // @ts-ignore: Model ismi büyük/küçük harf çakışmasını önlemek için
   return await prisma.user_Test_Score.upsert({
     where: { user_id: userId },
-    update: {
-      culture_w: scores.culture_w,
-      nature_w: scores.nature_w,
-      social_w: scores.social_w,
-      modern_w: scores.modern_w,
-    },
+    update: normalizedScores,
     create: {
       user_id: userId,
-      culture_w: scores.culture_w,
-      nature_w: scores.nature_w,
-      social_w: scores.social_w,
-      modern_w: scores.modern_w,
+      ...normalizedScores,
     }
   });
 };

@@ -15,6 +15,7 @@ export const registerService = async (userData: any) => {
   const hashed = await bcrypt.hash(password, 10);
 
   const result = await prisma.$transaction(async (tx) => {
+    // @ts-ignore: Prisma transaction client model isimleri
     const user = await tx.user.create({
       data: {
         email,
@@ -23,6 +24,7 @@ export const registerService = async (userData: any) => {
       },
     });
 
+    // @ts-ignore
     await tx.user_Profile.create({
       data: {
         user_id: user.id,

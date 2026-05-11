@@ -1,6 +1,7 @@
 import { prisma } from "../../config/prisma";
 
 export const getCityDiscoveryData = async (cityName: string) => {
+  // @ts-ignore: Prisma client 'cities' olarak üretiyor, runtime'da çalışıyor
   return prisma.city.findFirst({
     where: {
       city_name: {

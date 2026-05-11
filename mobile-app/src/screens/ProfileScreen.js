@@ -30,7 +30,7 @@ const ProfileScreen = ({ user, onLogout, scores, onResetTest }) => {
     };
 
     fetchProfile();
-  }, [user]);
+  }, [user, scores]); // scores değiştiğinde (yeni test) profili yenile
 
   const fullName = useMemo(() => {
     const firstName = user?.first_name || '';
@@ -38,12 +38,6 @@ const ProfileScreen = ({ user, onLogout, scores, onResetTest }) => {
     return `${firstName} ${lastName}`.trim();
   }, [user]);
 
-  const mappedScores = {
-    culture_w: scores?.culture ?? null,
-    modern_w: scores?.modern ?? null,
-    social_w: scores?.social ?? null,
-    nature_w: scores?.nature ?? null,
-  };
 
   return (
     <View style={styles.container}>
@@ -66,13 +60,13 @@ const ProfileScreen = ({ user, onLogout, scores, onResetTest }) => {
         </View>
 
         {/* 2. ANA TEST BUTONU */}
-        <TouchableOpacity style={styles.testSolveBtn} >
+        <TouchableOpacity style={styles.testSolveBtn} onPress={onResetTest}>
           <View style={styles.testIconBox}>
             <Text style={{fontSize: 20}}>📝</Text>
           </View>
           <View style={{marginLeft: 15}}>
-            <Text style={styles.testSolveTitle}>Meslek Analiz Testi</Text>
-            <Text style={styles.testSolveSub}>Karakterine en uygun mesleği bul</Text>
+            <Text style={styles.testSolveTitle}>Şehir Analiz Testi</Text>
+            <Text style={styles.testSolveSub}>Sana en uygun şehri keşfet</Text>
           </View>
           <Text style={styles.arrowIcon}>›</Text>
         </TouchableOpacity>
@@ -109,30 +103,52 @@ const ProfileScreen = ({ user, onLogout, scores, onResetTest }) => {
           </TouchableOpacity>
 
           {/* AÇILIR SONUÇ PANELİ */}
-{showResult && (
-  <View style={styles.resultDetails}>
-    <Text style={styles.resultCityTitle}>
-      Önerilen Şehir: 
-      <Text style={{ color: '#4A90E2', fontWeight: 'bold' }}>
-        {/* Veritabanından gelen şehir ismini buraya bağladık */}
-        {user?.matched_cities?.[0]?.city?.city_name || ''}
-      </Text>
-    </Text>
+          {showResult && (
+            <View style={styles.resultDetails}>
               {loading ? (
-  <ActivityIndicator color="#4A90E2" style={{ marginVertical: 10 }} />
-) : (
-  // Puanları sildik, yerine kullanıcıya yönelik şık bir mesaj ekledik
-  <Text style={{ 
-    textAlign: 'center', 
-    color: '#8E8E93', 
-    fontSize: 14, 
-    marginVertical: 8,
-    fontStyle: 'italic' 
-  }}>
-    Karakter analizine göre senin için en ideal şehir belirlendi! ✨
-  </Text>
-)}
-            
+                <ActivityIndicator color="#4A90E2" style={{ marginVertical: 10 }} />
+              ) : (() => {
+                const cities = authData?.matched_cities;
+                const RANK_CONFIG = [
+                  { medal: '🥇', bg: '#FFF8E1', border: '#FFD54F', textColor: '#F57F17', label: '1. Öneri' },
+                  { medal: '🥈', bg: '#F5F5F5', border: '#BDBDBD', textColor: '#424242', label: '2. Öneri' },
+                  { medal: '🥉', bg: '#FBE9E7', border: '#FFAB91', textColor: '#BF360C', label: '3. Öneri' },
+                ];
+
+                if (!cities || cities.length === 0) {
+                  return (
+                    <Text style={styles.noResultText}>
+                      Henüz test çözülmedi. Aşağıdan testi başlatabilirsin! 🚀
+                    </Text>
+                  );
+                }
+
+                return (
+                  <View>
+                    <Text style={styles.resultHeader}>✨ Sana Özel Şehir Önerileri</Text>
+                    {cities.slice(0, 3).map((item, index) => {
+                      const cityName = item?.city?.city_name || item?.city_name || '?';
+                      const cfg = RANK_CONFIG[index] || RANK_CONFIG[2];
+                      return (
+                        <View
+                          key={index}
+                          style={[
+                            styles.cityCard,
+                            { backgroundColor: cfg.bg, borderColor: cfg.border },
+                          ]}
+                        >
+                          <Text style={styles.cityMedal}>{cfg.medal}</Text>
+                          <View style={styles.cityCardText}>
+                            <Text style={[styles.cityRankLabel, { color: cfg.textColor }]}>{cfg.label}</Text>
+                            <Text style={styles.cityName}>{cityName}</Text>
+                          </View>
+                        </View>
+                      );
+                    })}
+                  </View>
+                );
+              })()}
+
               <TouchableOpacity style={styles.reSolveBtn} onPress={onResetTest}>
                 <Text style={styles.reSolveText}>Testi Tekrar Çöz</Text>
               </TouchableOpacity>
@@ -214,24 +230,50 @@ const styles = StyleSheet.create({
   arrowIcon: { fontSize: 22, color: '#D1D1D6', fontWeight: '300' },
   divider: { height: 1, backgroundColor: '#F8F8F8', marginLeft: 55 },
 
-  // --- YENİ EKLENEN SONUÇ STİLLERİ ---
-  resultDetails: { 
-    padding: 20, 
-    backgroundColor: '#F0F7FF', 
-    borderRadius: 20, 
+  // --- SONUÇ PANELİ STİLLERİ ---
+  resultDetails: {
+    padding: 15,
+    backgroundColor: '#F0F7FF',
+    borderRadius: 20,
     marginBottom: 15,
     borderWidth: 1,
-    borderColor: '#D0E5FF'
+    borderColor: '#D0E5FF',
   },
-  resultCityTitle: { fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 5 },
-  resultDesc: { fontSize: 13, color: '#666', lineHeight: 18, marginBottom: 15 },
-  reSolveBtn: { 
-    backgroundColor: '#FFF', 
-    paddingVertical: 10, 
-    borderRadius: 12, 
+  resultHeader: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#4A90E2',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  noResultText: {
+    fontSize: 13,
+    color: '#8E8E93',
+    textAlign: 'center',
+    fontStyle: 'italic',
+    marginVertical: 10,
+  },
+  cityCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 14,
+    borderWidth: 1.5,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 8,
+  },
+  cityMedal: { fontSize: 24, marginRight: 12 },
+  cityCardText: { flex: 1 },
+  cityRankLabel: { fontSize: 10, fontWeight: 'bold', letterSpacing: 0.5, marginBottom: 2 },
+  cityName: { fontSize: 16, fontWeight: 'bold', color: '#333' },
+  reSolveBtn: {
+    backgroundColor: '#FFF',
+    paddingVertical: 10,
+    borderRadius: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#4A90E2'
+    borderColor: '#4A90E2',
+    marginTop: 10,
   },
   reSolveText: { color: '#4A90E2', fontWeight: 'bold', fontSize: 14 },
 

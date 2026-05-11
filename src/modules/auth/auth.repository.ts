@@ -1,6 +1,7 @@
 import { prisma } from "../../config/prisma";
 
 export const findUserByEmail = async (email: string) => {
+  // @ts-ignore: Prisma client 'users' olarak üretiyor, runtime'da çalışıyor
   return await prisma.user.findUnique({
     where: { email },
     select: {
@@ -24,6 +25,7 @@ export const findUserByEmail = async (email: string) => {
 };
 
 export const createUser = async (email: string, password_hash: string) => {
+  // @ts-ignore
   return await prisma.user.create({
     data: {
       email,

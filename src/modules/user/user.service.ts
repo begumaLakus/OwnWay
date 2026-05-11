@@ -52,13 +52,13 @@ export const saveTestScoreService = async (userId: any, scores: any) => {
     throw new AppError("Geçersiz kullanıcı kimliği.", 400);
   }
 
-  // Şeyma'nın frontend'den gönderdiği (culture, nature vb.) isimleri, 
-  // Nisa'nın veritabanındaki (culture_w vb.) kolon isimleriyle eşleştiriyoruz.
+  // Frontend'den doğrudan culture_w, nature_w, social_w, modern_w formatında geliyor.
+  // Değerler 0-100 arasında normalize edilmiş tam sayılar olarak bekleniyor.
   const formattedScores = {
-    culture_w: scores.culture ?? 0.5,
-    nature_w: scores.nature ?? 0.5,
-    social_w: scores.social ?? 0.5,
-    modern_w: scores.modern ?? 0.5,
+    culture_w: scores.culture_w ?? scores.culture ?? 0,
+    nature_w: scores.nature_w ?? scores.nature ?? 0,
+    social_w: scores.social_w ?? scores.social ?? 0,
+    modern_w: scores.modern_w ?? scores.modern ?? 0,
   };
 
   return await repo.saveTestScores(numericUserId, formattedScores);
