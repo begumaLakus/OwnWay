@@ -3,3 +3,11 @@ node_modules
 .env
 
 /src/generated/prisma
+
+# Debug ve geçici scriptler
+debug_*.js
+check_scores.js
+fix_city_scores.js
+
+# Expo
+.expo/
