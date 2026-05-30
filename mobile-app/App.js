@@ -11,6 +11,7 @@ import HomeScreen from './src/screens/HomeScreen';
 import MapScreen from './src/screens/MapScreen';
 import JobScreen from './src/screens/JobScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
+import AdminScreen from './src/screens/AdminScreen';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const Tab = createBottomTabNavigator();
@@ -23,17 +24,31 @@ export default function App() {
   const [currentQ, setCurrentQ] = useState(0);
   const [userScores, setUserScores] = useState({ culture: 0, modern: 0, social: 0, nature: 0 });
 
-  // Öneri sonuçları state
-  const [recommendedCities, setRecommendedCities] = useState([]);
-  const [citiesLoading, setCitiesLoading] = useState(false);
-  const [citiesError, setCitiesError] = useState(null);
+
 
   // 1. GİRİŞ EKRANI
   if (appState === 'login') {
     return (
       <LoginScreen 
-        onLogin={(data) => { setUser(data); setAppState('main'); }} 
+        onLogin={(data) => {
+          setUser(data);
+          // Admin ise admin paneline, normal kullanıcı ise ana sayfaya
+          setAppState(data.role === 'ADMIN' ? 'admin' : 'main');
+        }}
         onGoToRegister={() => setAppState('register')} 
+      />
+    );
+  }
+
+  // 1b. ADMİN PANELİ
+  if (appState === 'admin') {
+    return (
+      <AdminScreen
+        user={user}
+        onLogout={() => {
+          setUser(null);
+          setAppState('login');
+        }}
       />
     );
   }
@@ -197,11 +212,14 @@ export default function App() {
       scores={userScores} 
       onLogout={() => {
         setAppState('login');
-        setCurrentQ(0); // Çıkış yapınca soru sırasını sıfırla
+        setCurrentQ(0);
       }} 
       onResetTest={() => {
-        setCurrentQ(0);      // Soru sırasını 1. soruya çeker
-        setAppState('form');   // Analiz formu sayfasına gönderir
+        setCurrentQ(0);
+        setAppState('form');
+      }}
+      onUserUpdate={(updatedFields) => {
+        setUser((prev) => ({ ...prev, ...updatedFields }));
       }}
     />
   )}
@@ -380,36 +398,5 @@ const styles = StyleSheet.create({
   },
   newOptionText: { color: '#555', fontSize: 15, fontWeight: '500' },
 
-  // Sonuç Sayfası Stilleri
-  resultContainer: { flex: 1, backgroundColor: '#FFFFFF', paddingHorizontal: 30 },
-  resultHeader: { alignItems: 'center', marginTop: 30 },
-  resultCircle: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#FADADD', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
-  resultMainTitle: { fontSize: 24, fontWeight: 'bold', color: '#333', marginBottom: 10 },
-  resultSubTitle: { fontSize: 14, color: '#AAA', textAlign: 'center', paddingHorizontal: 20, lineHeight: 20 },
-  
-  resultContent: { flex: 1, justifyContent: 'center' },
-  emptyCardPlaceholder: { 
-    height: 180, 
-    backgroundColor: '#F8FBFD', 
-    borderRadius: 25, 
-    borderWidth: 1, 
-    borderColor: '#E8F0FE', 
-    borderStyle: 'dashed', 
-    justifyContent: 'center', 
-    alignItems: 'center' 
-  },
-  placeholderText: { color: '#4A90E2', fontWeight: '500', fontSize: 14 },
 
-  resultFooter: { alignItems: 'center', marginBottom: 20 },
-  finishBtn: { 
-    backgroundColor: '#AEC6CF', 
-    paddingVertical: 16, 
-    paddingHorizontal: 50, 
-    borderRadius: 20,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10
-  },
-  finishBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 }
 });

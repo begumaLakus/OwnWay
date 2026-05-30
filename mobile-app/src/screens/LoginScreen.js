@@ -19,6 +19,7 @@ const LoginScreen = ({ onLogin, onGoToRegister }) => {
 
     onLogin({
       token: data.token,
+      role: data.role || 'student',
       email: data.email,
       first_name: data.first_name || "",
       last_name: data.last_name || "",
@@ -28,7 +29,7 @@ const LoginScreen = ({ onLogin, onGoToRegister }) => {
       personality_type: data.personality_type || "-",
     });
 
-    Alert.alert("Başarılı", `Hoş geldin, ${data.first_name || ""}!`);
+    Alert.alert("Başarılı", `Hoş geldin, ${data.first_name || data.email}!`);
   } catch (error) {
     const errorMsg = error?.response?.data?.message || "Giriş başarısız.";
     Alert.alert("Giriş Hatası", errorMsg);

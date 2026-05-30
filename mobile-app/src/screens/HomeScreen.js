@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Dimensions, TouchableOpacity, Image
 
 const { width } = Dimensions.get('window');
 
-const HomeScreen = ({ onNavigateToJobs }) => {
+const HomeScreen = () => {
   const scrollRef = useRef();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedContent, setSelectedContent] = useState(null);
@@ -145,8 +145,7 @@ const styles = StyleSheet.create({
   card: { width: (width / 2) - 35, marginBottom: 25 },
   imageContainer: { height: 160, borderRadius: 20, overflow: 'hidden', position: 'relative' },
   cardImage: { width: '100%', height: '100%', opacity: 0.9 },
-  tagBadge: { position: 'absolute', bottom: 10, left: 10, backgroundColor: '#FFF', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10 },
-  tagText: { fontSize: 10, fontWeight: 'bold', color: '#8E8E93' },
+
   cardInfo: { marginTop: 10 },
   cardTitle: { fontSize: 15, fontWeight: 'bold', color: '#333' },
   cardSummary: { fontSize: 12, color: '#8E8E93', marginTop: 5, lineHeight: 16 },

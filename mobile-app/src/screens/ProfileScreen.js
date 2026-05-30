@@ -1,14 +1,75 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  Dimensions, ActivityIndicator, Modal, TextInput,
+  KeyboardAvoidingView, Platform, Animated, Alert
+} from 'react-native';
 import api from './api';
 
 const { width } = Dimensions.get('window');
 
 // scores ve onResetTest prop'larını ekledik
-const ProfileScreen = ({ user, onLogout, scores, onResetTest }) => {
+const ProfileScreen = ({ user, onLogout, scores, onResetTest, onUserUpdate }) => {
   const [showResult, setShowResult] = useState(false);
   const [authData, setAuthData] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // Edit Modal State
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editForm, setEditForm] = useState({
+    first_name: '',
+    last_name: '',
+    current_location: '',
+    high_school: '',
+    dept_type: '',
+  });
+  const slideAnim = useRef(new Animated.Value(600)).current;
+
+  const openEditModal = () => {
+    setEditForm({
+      first_name: user?.first_name || '',
+      last_name: user?.last_name || '',
+      current_location: user?.current_location || '',
+      high_school: user?.high_school || '',
+      dept_type: user?.dept_type || '',
+    });
+    setEditModalVisible(true);
+    Animated.spring(slideAnim, {
+      toValue: 0,
+      useNativeDriver: true,
+      tension: 65,
+      friction: 11,
+    }).start();
+  };
+
+  const closeEditModal = () => {
+    Animated.timing(slideAnim, {
+      toValue: 600,
+      duration: 250,
+      useNativeDriver: true,
+    }).start(() => setEditModalVisible(false));
+  };
+
+  const handleSaveProfile = async () => {
+    if (!editForm.first_name.trim() || !editForm.last_name.trim()) {
+      Alert.alert('Hata', 'Ad ve soyad alanları boş bırakılamaz.');
+      return;
+    }
+    setSaving(true);
+    try {
+      await api.put('/user/profile', editForm, {
+        headers: { Authorization: `Bearer ${user.token}` },
+      });
+      Alert.alert('Başarılı', 'Profilin güncellendi! ✅');
+      if (onUserUpdate) onUserUpdate(editForm);
+      closeEditModal();
+    } catch (error) {
+      Alert.alert('Hata', 'Profil güncellenirken bir sorun oluştu.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -30,7 +91,7 @@ const ProfileScreen = ({ user, onLogout, scores, onResetTest }) => {
     };
 
     fetchProfile();
-  }, [user, scores]); // scores değiştiğinde (yeni test) profili yenile
+  }, [user, scores]);
 
   const fullName = useMemo(() => {
     const firstName = user?.first_name || '';
@@ -158,7 +219,7 @@ const ProfileScreen = ({ user, onLogout, scores, onResetTest }) => {
           <View style={styles.divider} />
           <MenuRow icon="🎧" label="Destek" color="#FFF5E6" />
           <View style={styles.divider} />
-          <MenuRow icon="📝" label="Bilgilerimi Güncelle" color="#E2FBE7" />
+          <MenuRow icon="✏️" label="Bilgilerimi Güncelle" color="#E2FBE7" onPress={openEditModal} />
         </View>
 
         {/* 5. ÇIKIŞ YAP */}
@@ -171,6 +232,100 @@ const ProfileScreen = ({ user, onLogout, scores, onResetTest }) => {
 
         <View style={{ height: 120 }} /> 
       </ScrollView>
+
+      {/* 6. PROFİL DÜZENLEME MODALİ */}
+      <Modal
+        visible={editModalVisible}
+        transparent
+        animationType="none"
+        onRequestClose={closeEditModal}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={closeEditModal}
+        />
+        <Animated.View style={[styles.modalSheet, { transform: [{ translateY: slideAnim }] }]}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+            {/* Modal Başlık */}
+            <View style={styles.modalHeader}>
+              <View style={styles.modalDrag} />
+              <Text style={styles.modalTitle}>✏️ Profil Bilgilerini Düzenle</Text>
+              <Text style={styles.modalSub}>Bilgilerini güncelleyerek profilini kişiselleştir</Text>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 440 }}>
+              {/* Ad */}
+              <Text style={styles.inputLabel}>Ad</Text>
+              <TextInput
+                style={styles.inputField}
+                value={editForm.first_name}
+                onChangeText={(v) => setEditForm((f) => ({ ...f, first_name: v }))}
+                placeholder="Adın"
+                placeholderTextColor="#BDBDBD"
+              />
+
+              {/* Soyad */}
+              <Text style={styles.inputLabel}>Soyad</Text>
+              <TextInput
+                style={styles.inputField}
+                value={editForm.last_name}
+                onChangeText={(v) => setEditForm((f) => ({ ...f, last_name: v }))}
+                placeholder="Soyadın"
+                placeholderTextColor="#BDBDBD"
+              />
+
+              {/* Konum */}
+              <Text style={styles.inputLabel}>Konum (Şehir)</Text>
+              <TextInput
+                style={styles.inputField}
+                value={editForm.current_location}
+                onChangeText={(v) => setEditForm((f) => ({ ...f, current_location: v }))}
+                placeholder="Yaşadığın şehir"
+                placeholderTextColor="#BDBDBD"
+              />
+
+              {/* Okul */}
+              <Text style={styles.inputLabel}>Okul</Text>
+              <TextInput
+                style={styles.inputField}
+                value={editForm.high_school}
+                onChangeText={(v) => setEditForm((f) => ({ ...f, high_school: v }))}
+                placeholder="Okul adın"
+                placeholderTextColor="#BDBDBD"
+              />
+
+              {/* Bölüm */}
+              <Text style={styles.inputLabel}>Bölüm</Text>
+              <TextInput
+                style={styles.inputField}
+                value={editForm.dept_type}
+                onChangeText={(v) => setEditForm((f) => ({ ...f, dept_type: v }))}
+                placeholder="Ör: Sayısal, Sözel, Eşit Ağırlık"
+                placeholderTextColor="#BDBDBD"
+              />
+            </ScrollView>
+
+            {/* Butonlar */}
+            <View style={styles.modalBtnRow}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={closeEditModal}>
+                <Text style={styles.cancelBtnText}>Vazgeç</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.saveBtn, saving && { opacity: 0.6 }]}
+                onPress={handleSaveProfile}
+                disabled={saving}
+              >
+                {saving ? (
+                  <ActivityIndicator color="#FFF" size="small" />
+                ) : (
+                  <Text style={styles.saveBtnText}>Kaydet</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
+        </Animated.View>
+      </Modal>
     </View>
   );
 };
@@ -183,8 +338,8 @@ const InfoTile = ({ label, value, isLast, isFull }) => (
   </View>
 );
 
-const MenuRow = ({ icon, label, color }) => (
-  <TouchableOpacity style={styles.menuRow}>
+const MenuRow = ({ icon, label, color, onPress }) => (
+  <TouchableOpacity style={styles.menuRow} onPress={onPress}>
     <View style={styles.menuLeft}>
       <View style={[styles.iconSquare, { backgroundColor: color }]}>
         <Text style={{fontSize: 16}}>{icon}</Text>
@@ -206,8 +361,7 @@ const styles = StyleSheet.create({
   userTextInfo: { marginLeft: 15 },
   nameRow: { flexDirection: 'row', alignItems: 'center' },
   userName: { fontSize: 22, fontWeight: 'bold', color: '#333' },
-  proBadge: { backgroundColor: '#E2FBE7', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, marginLeft: 8 },
-  proText: { fontSize: 10, fontWeight: 'bold', color: '#4CD964' },
+
   userSub: { fontSize: 13, color: '#8E8E93', marginTop: 2 },
 
   testSolveBtn: { backgroundColor: '#4A90E2', padding: 20, borderRadius: 25, flexDirection: 'row', alignItems: 'center', marginBottom: 30 },
@@ -280,7 +434,61 @@ const styles = StyleSheet.create({
   footer: { marginTop: 40, alignItems: 'center' },
   versionText: { fontSize: 12, color: '#D1D1D6', marginBottom: 15 },
   logoutBtn: { backgroundColor: '#FFF5F5', paddingHorizontal: 40, paddingVertical: 15, borderRadius: 20 },
-  logoutText: { color: '#FF3B30', fontWeight: 'bold', fontSize: 15 }
+  logoutText: { color: '#FF3B30', fontWeight: 'bold', fontSize: 15 },
+
+  // --- MODAL STİLLERİ ---
+  modalOverlay: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  modalSheet: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    paddingHorizontal: 25,
+    paddingBottom: 34,
+    paddingTop: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 20,
+  },
+  modalDrag: {
+    alignSelf: 'center',
+    width: 40, height: 4,
+    borderRadius: 2,
+    backgroundColor: '#E0E0E0',
+    marginBottom: 18,
+  },
+  modalHeader: { marginBottom: 20 },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', textAlign: 'center' },
+  modalSub: { fontSize: 12, color: '#BDBDBD', textAlign: 'center', marginTop: 4 },
+
+  inputLabel: { fontSize: 11, fontWeight: 'bold', color: '#9E9E9E', marginBottom: 6, marginTop: 12, letterSpacing: 0.5 },
+  inputField: {
+    backgroundColor: '#F8FBFF',
+    borderWidth: 1.5,
+    borderColor: '#E8EFF8',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: '#333',
+  },
+
+  modalBtnRow: { flexDirection: 'row', marginTop: 24, gap: 12 },
+  cancelBtn: {
+    flex: 1, paddingVertical: 15, borderRadius: 16,
+    backgroundColor: '#F5F5F5', alignItems: 'center',
+  },
+  cancelBtnText: { color: '#8E8E93', fontWeight: '600', fontSize: 15 },
+  saveBtn: {
+    flex: 2, paddingVertical: 15, borderRadius: 16,
+    backgroundColor: '#4A90E2', alignItems: 'center',
+  },
+  saveBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 15 },
 });
 
 export default ProfileScreen;

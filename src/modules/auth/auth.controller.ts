@@ -25,6 +25,7 @@ export const loginController = async (
   const token = reply.server.jwt.sign({
     id: user.id,
     email: user.email,
+    role: user.role,
   });
 
   // Service artık profile'ı düz döndürüyor, user.profile değil direkt user.first_name
@@ -33,6 +34,7 @@ export const loginController = async (
     message: "Login successful",
     data: {
       token,
+      role: user.role,
       first_name: user.first_name || "",
       last_name: user.last_name || "",
       email: user.email,

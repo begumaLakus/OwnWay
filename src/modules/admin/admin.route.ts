@@ -1,27 +1,47 @@
 import { FastifyInstance } from "fastify";
-import { getUsersHandler, deleteUserHandler } from "./admin.controller";
+import {
+  getUsersHandler,
+  deleteUserHandler,
+  updateUserRoleHandler,
+  getDashboardStatsHandler,
+  getCitiesHandler,
+  createCityHandler,
+  updateCityHandler,
+  deleteCityHandler,
+  createUniversityHandler,
+  updateUniversityHandler,
+  deleteUniversityHandler,
+  createDepartmentHandler,
+  updateDepartmentHandler,
+  deleteDepartmentHandler,
+} from "./admin.controller";
 import { authenticate } from "../auth/auth.middleware";
 import { adminOnly } from "./admin.middleware";
 
 export default async function adminRoutes(app: FastifyInstance) {
-  /**
-   * preHandler Zinciri:
-   * 1. authenticate: 'Sen kimsin?' (Token doğrular)
-   * 2. adminOnly: 'Yetkin var mı?' (Rol doğrular)
-   */
+  const guard = { preHandler: [authenticate, adminOnly] };
 
-  // Tüm kullanıcıları listeleme
-  app.get(
-    "/users", 
-    { preHandler: [authenticate, adminOnly] }, 
-    getUsersHandler
-  );
+  // ─── DASHBOARD ──────────────────────────────────────────
+  app.get("/stats", guard, getDashboardStatsHandler);
 
-  // Kullanıcı silme
-  // Unutma: Controller'da 'id'yi parseInt ile sayıya çevirecek şekilde güncelledik.
-  app.delete(
-    "/users/:id", 
-    { preHandler: [authenticate, adminOnly] }, 
-    deleteUserHandler
-  );
+  // ─── KULLANICILAR ───────────────────────────────────────
+  app.get("/users", guard, getUsersHandler);
+  app.delete("/users/:id", guard, deleteUserHandler);
+  app.patch("/users/:id/role", guard, updateUserRoleHandler);
+
+  // ─── ŞEHİRLER ──────────────────────────────────────────
+  app.get("/cities", guard, getCitiesHandler);
+  app.post("/cities", guard, createCityHandler);
+  app.put("/cities/:id", guard, updateCityHandler);
+  app.delete("/cities/:id", guard, deleteCityHandler);
+
+  // ─── ÜNİVERSİTELER ─────────────────────────────────────
+  app.post("/universities", guard, createUniversityHandler);
+  app.put("/universities/:id", guard, updateUniversityHandler);
+  app.delete("/universities/:id", guard, deleteUniversityHandler);
+
+  // ─── BÖLÜMLER ───────────────────────────────────────────
+  app.post("/departments", guard, createDepartmentHandler);
+  app.put("/departments/:id", guard, updateDepartmentHandler);
+  app.delete("/departments/:id", guard, deleteDepartmentHandler);
 }
