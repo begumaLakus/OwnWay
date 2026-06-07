@@ -2,23 +2,18 @@
   "compilerOptions": {
     "rootDir": "./src",
     "outDir": "./dist",
-
-    "module": "commonjs",
+    "module": "Node16",
+    "moduleResolution": "Node16",
     "target": "esnext",
     "lib": ["esnext"],
     "types": ["node"],
-
     "sourceMap": true,
     "strict": true,
-
     "esModuleInterop": true,
     "skipLibCheck": true,
-    
-    // 🔹 EKLEDİĞİMİZ KRİTİK AYARLAR:
-    "moduleResolution": "node",     // Kütüphanelerin daha rahat bulunmasını sağlar
-    "resolveJsonModule": true,      // JSON dosyalarını (package.json vb.) import edebilmenizi sağlar
-    "forceConsistentCasingInFileNames": true // Windows/Mac arası dosya ismi uyumsuzluğunu engeller
+    "resolveJsonModule": true,
+    "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*"],          // src altındaki tüm klasörleri dahil et
-  "exclude": ["node_modules", "dist", "prisma"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "prisma", "mobile-app"]
 }
