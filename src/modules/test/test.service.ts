@@ -91,21 +91,3 @@ export const processTestResults = async (userId: number, input: SubmitTestInput)
     return topCities;
   });
 };
-
-/**
- * Kişilik testi meslek önerilerini veritabanına kaydeder.
- */
-export const saveCareerSuggestions = async (userId: number, occupations: string[]) => {
-  // @ts-ignore
-  await prisma.user_Career_Suggestion.deleteMany({
-    where: { user_id: userId },
-  });
-
-  // @ts-ignore
-  await prisma.user_Career_Suggestion.createMany({
-    data: occupations.map((name: string) => ({
-      user_id: userId,
-      occupation_name: name,
-    })),
-  });
-};
