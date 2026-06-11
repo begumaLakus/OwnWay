@@ -433,8 +433,6 @@ const ProfileScreen = ({ user, onLogout, scores, onResetTest, onUserUpdate }) =>
           )}
 
           <View style={styles.divider} />
-          <MenuRow icon="🎧" label="Destek" color="#FFF5E6" />
-          <View style={styles.divider} />
           <MenuRow icon="✏️" label="Bilgilerimi Güncelle" color="#E2FBE7" onPress={openEditModal} />
         </View>
 

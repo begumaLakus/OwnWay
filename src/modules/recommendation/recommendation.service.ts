@@ -38,7 +38,7 @@ export class RecommendationService {
     });
 
     // @ts-ignore
-    const matchedDepartments = await prisma.department.findMany({
+    let matchedDepartments = await prisma.department.findMany({
       where: careerSuggestion?.occupation_name
         ? {
             dept_name: {
@@ -54,6 +54,20 @@ export class RecommendationService {
       },
       take: 200, // Çok fazla DB yükü oluşturmaması için limit
     });
+
+    // ── FALLBACK: Eğer meslek ismiyle tam eşleşen bölüm bulunamazsa (Örn: "Avukat" yerine "Hukuk" olması gibi),
+    // ── boş liste döndürmek yerine tüm bölümleri değerlendir.
+    if (matchedDepartments.length === 0 && careerSuggestion) {
+      // @ts-ignore
+      matchedDepartments = await prisma.department.findMany({
+        include: {
+          university: {
+            include: { city: true }
+          }
+        },
+        take: 200,
+      });
+    }
 
     if (matchedDepartments.length === 0) {
       return [];

@@ -7,4 +7,4 @@ declare module "fastify" {
       reply: FastifyReply
     ) => Promise<void>;
   }
-}
+}s

@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { submitTestHandler } from "./test.controller";
+import { submitTestHandler, submitCareerHandler } from "./test.controller";
 
 export default async function testRoutes(fastify: FastifyInstance) {
   fastify.post(
@@ -20,5 +20,26 @@ export default async function testRoutes(fastify: FastifyInstance) {
       preHandler: [(fastify as any).authenticate],
     },
     submitTestHandler
+  );
+
+  fastify.post(
+    "/submit-career",
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['occupations'],
+          properties: {
+            occupations: {
+              type: 'array',
+              items: { type: 'string' },
+              maxItems: 10,
+            },
+          },
+        },
+      },
+      preHandler: [(fastify as any).authenticate],
+    },
+    submitCareerHandler
   );
 }
