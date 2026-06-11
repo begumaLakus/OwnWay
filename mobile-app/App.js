@@ -225,13 +225,14 @@ function MainApp() {
 </Tab.Screen>
       <Tab.Screen
         name="PersonalityTest"
-        component={PersonalityTestScreen}
         options={{
           tabBarButton: () => null,
           headerShown: true,
           title: 'Meslek Analiz Testi',
         }}
-      />
+      >
+        {({ navigation }) => <PersonalityTestScreen navigation={navigation} user={user} />}
+      </Tab.Screen>
     </Tab.Navigator>
   );
 }

@@ -3,12 +3,13 @@ import cors from "@fastify/cors";
 import jwt from "@fastify/jwt";
 import { ZodError } from "zod";
 
-import testRoutes from "./modules/test/test.route";
 import authRoutes from "./modules/auth/auth.route";
 import adminRoutes from "./modules/admin/admin.route";
 import universityRoutes from "./modules/university/university.route";
-import userRoutes from "./modules/user/user.route"; 
+import userRoutes from "./modules/user/user.route";
 import { recommendationRoutes } from "./modules/recommendation/recommendation.route";
+import testRoutes from "./modules/test/test.route";
+import { careerRoutes } from "./modules/career/career.route";
 
 import { env } from "./config/env";
 import { AppError } from "./utils/AppError";
@@ -16,9 +17,9 @@ import { AppError } from "./utils/AppError";
 export const buildApp = () => {
   const app = Fastify({ logger: true });
 
-  // 🔹 CORS Ayarı: Şeyma'nın frontend'den (localhost:3000 vb.) sorunsuz bağlanmasını sağlar
+  // 🔹 CORS Ayarı
   app.register(cors, {
-    origin: true, 
+    origin: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
   });
 
@@ -27,8 +28,7 @@ export const buildApp = () => {
     secret: env.JWT_SECRET,
   });
 
-  // 🔹 KRİTİK DECORATOR: authenticate middleware'inin çalışması için bu şart!
-  // Bu sayede request.user ve request.jwtVerify her yerde kullanılabilir hale gelir.
+  // 🔹 Authenticate Decorator
   app.decorate("authenticate", async (request: any, reply: any) => {
     try {
       await request.jwtVerify();
@@ -37,17 +37,17 @@ export const buildApp = () => {
     }
   });
 
-  // 🔹 Modüller Kaydediliyor (Prefix'ler standartlaştırıldı)
+  // 🔹 Modüller Kaydediliyor (Doğru sırada)
   app.register(authRoutes, { prefix: "/api/auth" });
   app.register(adminRoutes, { prefix: "/api/admin" });
   app.register(universityRoutes, { prefix: "/api/university" });
   app.register(userRoutes, { prefix: "/api/user" });
   app.register(recommendationRoutes, { prefix: "/api/recommendation" });
   app.register(testRoutes, { prefix: "/api/test" });
+  app.register(careerRoutes, { prefix: "/api/career" });
 
   // 🔹 GLOBAL HATA YÖNETİMİ
   app.setErrorHandler((error, request, reply) => {
-    // Kendi fırlattığımız hatalar (AppError)
     if (error instanceof AppError) {
       return reply.status(error.statusCode).send({
         success: false,
@@ -56,17 +56,15 @@ export const buildApp = () => {
       });
     }
 
-    // Zod Doğrulama hataları
     if (error instanceof ZodError) {
       return reply.status(400).send({
         success: false,
         message: "Veri doğrulama hatası",
-        errors: error.flatten().fieldErrors, // Detaylı hata mesajı
+        errors: error.flatten().fieldErrors,
         data: null,
       });
     }
 
-    // Beklenmedik sunucu hataları
     const err = error as Error;
     return reply.status(500).send({
       success: false,

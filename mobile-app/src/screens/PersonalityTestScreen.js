@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from 'react-native';
 // 🎯questions.js dosyasından 48 soruyu çeken alan[cite: 1]:
-import { personalityQuestions } from '../data/questions'; 
-// 🎯 Kendi Mac IP'sinin olduğu axios bağlantı dosyan:
-import api from './api'; 
+import { personalityQuestions } from '../data/questions';
+import { submitCareerTest } from '../utils/careerTest';
 
-export default function PersonalityTestScreen({ navigation }) {
+export default function PersonalityTestScreen({ navigation, user }) {
   // Şu an kullanıcının hangi soruda olduğunu tutan state (0 = 1. Soru)
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   // Verilen tüm cevapları { soru_id: puan } şeklinde tutan nesne
@@ -29,26 +28,24 @@ export default function PersonalityTestScreen({ navigation }) {
 
   // Test bittiğinde sonuçları arkadaşının backend kısmına gönderecek fonksiyon
   const submitTest = async () => {
+    if (!user?.token) {
+      Alert.alert('Hata', 'Oturum bulunamadı. Lütfen tekrar giriş yapın.');
+      return;
+    }
+
     setLoading(true);
     try {
-      // 🚨 Arkadaşının backend tarafında açacağı endpoint adresi: /api/test/submit
-      const response = await api.post('/test/submit', {
-        answers: answers // Kullanıcının tüm cevaplarını nesne olarak gönderiyoruz
-      });
+      const result = await submitCareerTest(answers, user.token);
+      const [m1, m2, m3] = result.topCareers;
 
-      if (response.data && response.data.success) {
-        // Backend hesaplama yapıp bize en uygun 3 mesleği dizi olarak dönecek
-        const [m1, m2, m3] = response.data.recommendations;
-        
-        Alert.alert(
-          "Analiz Sonucu 🎉",
-          `Kişiliğinize En Uygun 3 Meslek:\n\n1. 💼 ${m1}\n2. 💼 ${m2}\n3. 💼 ${m3}`,
-          [{ text: "Harika, Teşekkürler!", onPress: () => navigation.navigate('Profile') }]
-        );
-      }
+      Alert.alert(
+        'Analiz Sonucu 🎉',
+        `Kişiliğinize En Uygun 3 Meslek:\n\n1. 💼 ${m1}\n2. 💼 ${m2}\n3. 💼 ${m3}`,
+        [{ text: 'Harika, Teşekkürler!', onPress: () => navigation.navigate('Profil') }]
+      );
     } catch (error) {
-      console.error("Test gönderme hatası:", error);
-      Alert.alert("Hata", "Test sonuçları veritabanına gönderilirken bir hata oluştu kanka.");
+      console.error('Test gönderme hatası:', error);
+      Alert.alert('Hata', 'Test sonuçları veritabanına gönderilirken bir hata oluştu.');
     } finally {
       setLoading(false);
     }
