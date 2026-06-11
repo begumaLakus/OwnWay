@@ -12,6 +12,7 @@ import MapScreen from './src/screens/MapScreen';
 import JobScreen from './src/screens/JobScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import AdminScreen from './src/screens/AdminScreen';
+import PersonalityTestScreen from './src/screens/PersonalityTestScreen';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const Tab = createBottomTabNavigator();
@@ -32,26 +33,23 @@ export default function App() {
       <LoginScreen 
         onLogin={(data) => {
           setUser(data);
-          // Admin ise admin paneline, normal kullanıcı ise ana sayfaya
-          setAppState(data.role === 'ADMIN' ? 'admin' : 'main');
+          if (data?.role === 'ADMIN' || data?.email === 'admin@gmail.com') {
+            setAppState('admin');
+          } else {
+            setAppState('main');
+          }
         }}
         onGoToRegister={() => setAppState('register')} 
       />
     );
   }
 
-  // 1b. ADMİN PANELİ
+  // ADMİN EKRANI
   if (appState === 'admin') {
-    return (
-      <AdminScreen
-        user={user}
-        onLogout={() => {
-          setUser(null);
-          setAppState('login');
-        }}
-      />
-    );
+    return <AdminScreen user={user} navigation={null} onLogout={() => { setUser(null); setAppState('login'); }} />;
   }
+
+
 
   // 2. KAYIT EKRANI
   if (appState === 'register') {
@@ -198,9 +196,7 @@ export default function App() {
 
   // 5. ANA UYGULAMA (Giriş tamamlandıktan sonra)
   return (
-    <Tab.Navigator screenOptions={{ headerShown: false 
-      
-    }}>
+    <Tab.Navigator screenOptions={{ headerShown: false }} tabBar={(props) => <CustomTabBar {...props} />}>
       
       <Tab.Screen name="Ana Sayfa" component={HomeScreen} />
       <Tab.Screen name="Meslekler" component={JobScreen} />
@@ -224,6 +220,15 @@ export default function App() {
     />
   )}
 </Tab.Screen>
+      <Tab.Screen
+        name="PersonalityTest"
+        component={PersonalityTestScreen}
+        options={{
+          tabBarButton: () => null,
+          headerShown: true,
+          title: 'Meslek Analiz Testi',
+        }}
+      />
     </Tab.Navigator>
   );
 }
@@ -399,4 +404,105 @@ const styles = StyleSheet.create({
   newOptionText: { color: '#555', fontSize: 15, fontWeight: '500' },
 
 
+});
+
+// ─── CUSTOM TAB BAR ───────────────────────────────────────────────────────────
+const TAB_CONFIG = [
+  { name: 'Ana Sayfa', icon: 'home', iconActive: 'home', label: 'Ana Sayfa' },
+  { name: 'Meslekler', icon: 'briefcase-outline', iconActive: 'briefcase', label: 'Meslekler' },
+  { name: 'Harita', icon: 'map-outline', iconActive: 'map', label: 'Harita' },
+  { name: 'Profil', icon: 'person-outline', iconActive: 'person', label: 'Profil' },
+];
+
+function CustomTabBar({ state, descriptors, navigation }) {
+  const VISIBLE_TABS = ['Ana Sayfa', 'Meslekler', 'Harita', 'Profil'];
+  const visibleRoutes = state.routes.filter((route) => VISIBLE_TABS.includes(route.name));
+
+  return (
+    <View style={tabBarStyles.wrapper}>
+      <View style={tabBarStyles.container}>
+        {visibleRoutes.map((route) => {
+          const isFocused = state.index === state.routes.indexOf(route);
+          const cfg = TAB_CONFIG.find((t) => t.name === route.name) || TAB_CONFIG[0];
+
+          const onPress = () => {
+            const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+            if (!isFocused && !event.defaultPrevented) {
+              navigation.navigate(route.name);
+            }
+          };
+
+          return (
+            <TouchableOpacity
+              key={route.key}
+              onPress={onPress}
+              activeOpacity={0.75}
+              style={tabBarStyles.tab}
+            >
+              {isFocused && <View style={tabBarStyles.activePill} />}
+              <Ionicons
+                name={isFocused ? cfg.iconActive : cfg.icon}
+                size={22}
+                color={isFocused ? '#4A90E2' : '#BDBDBD'}
+                style={{ zIndex: 1 }}
+              />
+              <Text style={[tabBarStyles.label, isFocused && tabBarStyles.labelActive]}>
+                {cfg.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+const tabBarStyles = StyleSheet.create({
+  wrapper: {
+    position: 'absolute',
+    bottom: 24,
+    left: 20,
+    right: 20,
+    alignItems: 'center',
+  },
+  container: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 32,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    shadowColor: '#4A90E2',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 16,
+    borderWidth: 1,
+    borderColor: '#F0F4FF',
+    width: '100%',
+  },
+  tab: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 6,
+    borderRadius: 24,
+    position: 'relative',
+  },
+  activePill: {
+    position: 'absolute',
+    top: 0, left: 6, right: 6, bottom: 0,
+    backgroundColor: '#EEF4FF',
+    borderRadius: 20,
+  },
+  label: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#BDBDBD',
+    marginTop: 3,
+    zIndex: 1,
+  },
+  labelActive: {
+    color: '#4A90E2',
+    fontWeight: '700',
+  },
 });

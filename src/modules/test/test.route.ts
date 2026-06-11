@@ -1,15 +1,14 @@
 import { FastifyInstance } from "fastify";
-import { submitTestHandler } from "./test.controller";
+import { submitTestHandler, submitCareerHandler } from "./test.controller";
 
 export default async function testRoutes(fastify: FastifyInstance) {
   fastify.post(
     "/submit",
     {
       schema: {
-        // Zod objesini doğrudan vermek yerine, Fastify'ın beklediği yapıyı kuruyoruz
         body: {
           type: 'object',
-          required: ['culture_w', 'nature_w', 'social_w', 'modern_w'], // Hata veren "array" burasıydı, düzelttik
+          required: ['culture_w', 'nature_w', 'social_w', 'modern_w'],
           properties: {
             culture_w: { type: 'number', minimum: 0, maximum: 100 },
             nature_w: { type: 'number', minimum: 0, maximum: 100 },
@@ -18,9 +17,29 @@ export default async function testRoutes(fastify: FastifyInstance) {
           },
         },
       },
-      // Authenticate dekoratörü app.ts'de tanımlandığı için burada (fastify as any) ile erişebilirsin
-      preHandler: [(fastify as any).authenticate], 
+      preHandler: [(fastify as any).authenticate],
     },
     submitTestHandler
+  );
+
+  fastify.post(
+    "/submit-career",
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['occupations'],
+          properties: {
+            occupations: {
+              type: 'array',
+              items: { type: 'string' },
+              maxItems: 10,
+            },
+          },
+        },
+      },
+      preHandler: [(fastify as any).authenticate],
+    },
+    submitCareerHandler
   );
 }

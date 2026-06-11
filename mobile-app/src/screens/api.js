@@ -1,10 +1,6 @@
 import axios from 'axios';
 
-<<<<<<< Updated upstream
-const API_URL = 'http://192.168.1.244:3000/api';
-=======
-const API_URL = 'http://192.168.1.110:3000/api';
->>>>>>> Stashed changes
+const API_URL = 'http://192.168.1.103:3000/api';
 
 export const api = axios.create({
   baseURL: API_URL,
