@@ -3,6 +3,8 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   Modal, Dimensions, SafeAreaView, StatusBar
 } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Image, Dimensions, Platform } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -216,23 +218,25 @@ const DifficultyDots = ({ level, color }) => (
 );
 
 const JobScreen = () => {
+  const { colors, isDarkMode } = useTheme();
   const [selectedJob, setSelectedJob] = useState(null);
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
-      <SafeAreaView>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Meslek Kütüphanesi</Text>
-          <Text style={styles.headerSubtitle}>Kariyerine ilham verecek alanları keşfet</Text>
-        </View>
-      </SafeAreaView>
-
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={styles.header}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Meslek Kütüphanesi</Text>
+        <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Karakterine en yakın olanı keşfet.</Text>
+      </View>
+      
       <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
         {jobs.map((job) => (
-          <TouchableOpacity
-            key={job.id}
-            style={[styles.jobCard, { backgroundColor: job.color, borderColor: job.accentColor + '30' }]}
+          <TouchableOpacity 
+            key={job.id} 
+            style={[styles.jobCard, { 
+              backgroundColor: isDarkMode ? colors.cardBackground : job.color,
+              borderColor: isDarkMode ? colors.border : 'transparent',
+              borderWidth: isDarkMode ? 1 : 0
+            }]}
             onPress={() => setSelectedJob(job)}
             activeOpacity={0.85}
           >
