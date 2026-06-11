@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import api from './api';
 import { personalityQuestions } from '../data/questions';
+import { submitCareerTest } from '../utils/careerTest';
 
 const { width } = Dimensions.get('window');
 
@@ -40,42 +41,26 @@ const PersonalityTestModal = ({ visible, onClose, onComplete, user }) => {
   };
 
   const submitTest = async () => {
+    if (!user?.token) {
+      Alert.alert('Hata', 'Oturum bulunamadı. Lütfen tekrar giriş yapın.');
+      return;
+    }
+
     setLoading(true);
     try {
-      const categoryScores = { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 };
-      personalityQuestions.forEach((q) => {
-        const score = answers[q.id] || 0;
-        categoryScores[q.category] = (categoryScores[q.category] || 0) + score;
-      });
-
-      const sorted = Object.entries(categoryScores).sort((a, b) => b[1] - a[1]);
-
-      const CAREER_MAP = {
-        R: ['Makine Mühendisi', 'İnşaat Mühendisi', 'Elektrik Teknisyeni', 'Pilot', 'Ziraat Mühendisi'],
-        I: ['Yazılım Geliştirici', 'Veri Bilimcisi', 'Araştırma Uzmanı', 'Doktor', 'Biyolog'],
-        A: ['Grafik Tasarımcı', 'İç Mimar', 'Oyun Tasarımcısı', 'Müzisyen', 'Fotoğrafçı'],
-        S: ['Psikolog', 'Öğretmen', 'Sosyal Hizmet Uzmanı', 'İnsan Kaynakları Uzmanı', 'Hemşire'],
-        E: ['Girişimci', 'Pazarlama Müdürü', 'Avukat', 'Proje Yöneticisi', 'Satış Müdürü'],
-        C: ['Muhasebeci', 'Mali Müşavir', 'Sekreter', 'Arşivci', 'Kalite Kontrol Uzmanı'],
-      };
-
-      const top1 = sorted[0][0];
-      const top2 = sorted[1][0];
-      const recommended = [
-        CAREER_MAP[top1][0],
-        CAREER_MAP[top1][1],
-        CAREER_MAP[top2][0],
-      ].filter(Boolean);
-
-      await api.post('/test/submit-career', { occupations: recommended }, {
-        headers: { Authorization: `Bearer ${user?.token}` },
-      });
-
-      setResultData(recommended);
+      const result = await submitCareerTest(answers, user.token);
+      setResultData(result.topCareers);
       setTestDone(true);
     } catch (error) {
-      console.error('Test gönderme hatası:', error);
-      Alert.alert('Hata', 'Test sonuçları gönderilirken bir hata oluştu.');
+      console.error('Test gönderme hatası:', error?.response?.data || error);
+      const serverMsg =
+        error?.response?.data?.error ||
+        error?.response?.data?.message ||
+        error?.message;
+      Alert.alert(
+        'Hata',
+        serverMsg || 'Test sonuçları gönderilirken bir hata oluştu.'
+      );
     } finally {
       setLoading(false);
     }
