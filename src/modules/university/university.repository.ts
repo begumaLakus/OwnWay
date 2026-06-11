@@ -13,14 +13,8 @@ export const getCityDiscoveryData = async (cityName: string) => {
       universities: {
         include: {
           departments: {
-            where: {
-              dept_name: {
-                in: ["Bilgisayar Mühendisliği", "Tıp", "Hukuk", "Psikoloji", "İlahiyat"],
-                // Eğer veritabanında yazım farklılıkları varsa buraya da mode eklenebilir
-              }
-            },
-            // Şeyma'ya taban puanlarını da gösterelim mi? 
-            // Select eklemiyoruz ki tüm departman verileri (base_rank vb.) gitsin.
+            orderBy: { base_score: "desc" },
+            take: 20, // Üniversite başına en fazla 20 bölüm (taban puana göre sıralı)
           }
         }
       }

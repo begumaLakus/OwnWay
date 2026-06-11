@@ -108,6 +108,8 @@ export const createDepartment = async (data: {
   quota: number;
   base_score: number;
   base_rank: number;
+  female_student_count?: number;
+  male_student_count?: number;
 }) =>
   // @ts-ignore
   prisma.department.create({ data });
@@ -121,6 +123,8 @@ export const updateDepartment = async (
     quota?: number;
     base_score?: number;
     base_rank?: number;
+    female_student_count?: number;
+    male_student_count?: number;
   }
 ) =>
   // @ts-ignore

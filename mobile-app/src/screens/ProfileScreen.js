@@ -472,38 +472,53 @@ const ProfileScreen = ({ user, onLogout, scores, onResetTest, onUserUpdate }) =>
 
       {/* 7. PROFİL DÜZENLEME MODALİ */}
       <Modal visible={editModalVisible} transparent animationType="none" onRequestClose={closeEditModal}>
-        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={closeEditModal} />
-        <Animated.View style={[styles.modalSheet, { transform: [{ translateY: slideAnim }] }]}>
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-            <View style={styles.modalHeader}>
-              <View style={styles.modalDrag} />
-              <Text style={styles.modalTitle}>✏️ Profil Bilgilerini Düzenle</Text>
-              <Text style={styles.modalSub}>Bilgilerini güncelleyerek profilini kişiselleştir</Text>
-            </View>
+        <View style={{ flex: 1 }}>
+          {/* Arka plan overlay - tam ekran */}
+          <TouchableOpacity
+            style={[styles.modalOverlay, { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }]}
+            activeOpacity={1}
+            onPress={closeEditModal}
+          />
+          {/* Klavye ile birlikte yukarı kalkan alan */}
+          <KeyboardAvoidingView
+            style={{ flex: 1, justifyContent: 'flex-end' }}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          >
+            <Animated.View style={[styles.modalSheet, { transform: [{ translateY: slideAnim }] }]}>
+              <View style={styles.modalHeader}>
+                <View style={styles.modalDrag} />
+                <Text style={styles.modalTitle}>✏️ Profil Bilgilerini Düzenle</Text>
+                <Text style={styles.modalSub}>Bilgilerini güncelleyerek profilini kişiselleştir</Text>
+              </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 440 }}>
-              <Text style={styles.inputLabel}>Ad</Text>
-              <TextInput style={styles.inputField} value={editForm.first_name} onChangeText={(v) => setEditForm((f) => ({ ...f, first_name: v }))} placeholder="Adın" placeholderTextColor="#BDBDBD" />
-              <Text style={styles.inputLabel}>Soyad</Text>
-              <TextInput style={styles.inputField} value={editForm.last_name} onChangeText={(v) => setEditForm((f) => ({ ...f, last_name: v }))} placeholder="Soyadın" placeholderTextColor="#BDBDBD" />
-              <Text style={styles.inputLabel}>Konum (Şehir)</Text>
-              <TextInput style={styles.inputField} value={editForm.current_location} onChangeText={(v) => setEditForm((f) => ({ ...f, current_location: v }))} placeholder="Yaşadığın şehir" placeholderTextColor="#BDBDBD" />
-              <Text style={styles.inputLabel}>Okul</Text>
-              <TextInput style={styles.inputField} value={editForm.high_school} onChangeText={(v) => setEditForm((f) => ({ ...f, high_school: v }))} placeholder="Okul adın" placeholderTextColor="#BDBDBD" />
-              <Text style={styles.inputLabel}>Bölüm</Text>
-              <TextInput style={styles.inputField} value={editForm.dept_type} onChangeText={(v) => setEditForm((f) => ({ ...f, dept_type: v }))} placeholder="Ör: Sayısal, Sözel, Eşit Ağırlık" placeholderTextColor="#BDBDBD" />
-            </ScrollView>
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={{ paddingBottom: 8 }}
+              >
+                <Text style={styles.inputLabel}>Ad</Text>
+                <TextInput style={styles.inputField} value={editForm.first_name} onChangeText={(v) => setEditForm((f) => ({ ...f, first_name: v }))} placeholder="Adın" placeholderTextColor="#BDBDBD" returnKeyType="next" />
+                <Text style={styles.inputLabel}>Soyad</Text>
+                <TextInput style={styles.inputField} value={editForm.last_name} onChangeText={(v) => setEditForm((f) => ({ ...f, last_name: v }))} placeholder="Soyadın" placeholderTextColor="#BDBDBD" returnKeyType="next" />
+                <Text style={styles.inputLabel}>Konum (Şehir)</Text>
+                <TextInput style={styles.inputField} value={editForm.current_location} onChangeText={(v) => setEditForm((f) => ({ ...f, current_location: v }))} placeholder="Yaşadığın şehir" placeholderTextColor="#BDBDBD" returnKeyType="next" />
+                <Text style={styles.inputLabel}>Okul</Text>
+                <TextInput style={styles.inputField} value={editForm.high_school} onChangeText={(v) => setEditForm((f) => ({ ...f, high_school: v }))} placeholder="Okul adın" placeholderTextColor="#BDBDBD" returnKeyType="next" />
+                <Text style={styles.inputLabel}>Bölüm</Text>
+                <TextInput style={styles.inputField} value={editForm.dept_type} onChangeText={(v) => setEditForm((f) => ({ ...f, dept_type: v }))} placeholder="Ör: Sayısal, Sözel, Eşit Ağırlık" placeholderTextColor="#BDBDBD" returnKeyType="done" />
+              </ScrollView>
 
-            <View style={styles.modalBtnRow}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={closeEditModal}>
-                <Text style={styles.cancelBtnText}>Vazgeç</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={handleSaveProfile} disabled={saving}>
-                {saving ? <ActivityIndicator color="#FFF" size="small" /> : <Text style={styles.saveBtnText}>Kaydet</Text>}
-              </TouchableOpacity>
-            </View>
+              <View style={styles.modalBtnRow}>
+                <TouchableOpacity style={styles.cancelBtn} onPress={closeEditModal}>
+                  <Text style={styles.cancelBtnText}>Vazgeç</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={handleSaveProfile} disabled={saving}>
+                  {saving ? <ActivityIndicator color="#FFF" size="small" /> : <Text style={styles.saveBtnText}>Kaydet</Text>}
+                </TouchableOpacity>
+              </View>
+            </Animated.View>
           </KeyboardAvoidingView>
-        </Animated.View>
+        </View>
       </Modal>
     </View>
   );
@@ -572,8 +587,8 @@ const styles = StyleSheet.create({
   versionText: { fontSize: 12, color: '#D1D1D6', marginBottom: 15 },
   logoutBtn: { backgroundColor: '#FFF5F5', paddingHorizontal: 40, paddingVertical: 15, borderRadius: 20 },
   logoutText: { color: '#FF3B30', fontWeight: 'bold', fontSize: 15 },
-  modalOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.45)' },
-  modalSheet: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFF', borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingHorizontal: 25, paddingBottom: 34, paddingTop: 12, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 20 },
+  modalOverlay: { backgroundColor: 'rgba(0,0,0,0.45)' },
+  modalSheet: { backgroundColor: '#FFF', borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingHorizontal: 25, paddingBottom: 34, paddingTop: 12, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 20 },
   modalDrag: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: '#E0E0E0', marginBottom: 18 },
   modalHeader: { marginBottom: 20 },
   modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', textAlign: 'center' },

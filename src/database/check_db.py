@@ -10,35 +10,52 @@ DB_CONFIG = {
     "password": os.getenv("DB_PASS")
 }
 
-CITY_DATA = {
-    "Istanbul":  {"cost": 1.261, "culture": 5.00, "students": 938607},
-    "Izmir":     {"cost": 1.215, "culture": 2.54, "students": 193164},
-    "Ankara":    {"cost": 1.125, "culture": 2.69, "students": 346882},
-    "Konya":     {"cost": 0.9625,"culture": 1.98, "students": 126426},
-    "Antalya":   {"cost": 1.080, "culture": 1.97, "students": 87415},
-    "Zonguldak": {"cost": 0.998, "culture": 1.00, "students": 31476},
-    "Erzurum":   {"cost": 0.927, "culture": 1.21, "students": 68125},
-}
-
 conn = psycopg2.connect(**DB_CONFIG)
 cur  = conn.cursor()
 
-cur.execute()
-print("Cities tablo yapisi:")
+# ── Tablo yapısı ────────────────────────────────────────────
+cur.execute("""
+    SELECT column_name, data_type
+    FROM information_schema.columns
+    WHERE table_name = 'departments'
+    ORDER BY ordinal_position;
+""")
+print("departments tablo yapisi:")
 cols = cur.fetchall()
 for col in cols:
     print(f"  {col[0]:30s} {col[1]}")
 
-cur.execute()
+# ── Kısıt (constraint) listesi ──────────────────────────────
+cur.execute("""
+    SELECT constraint_name, constraint_type
+    FROM information_schema.table_constraints
+    WHERE table_name = 'departments';
+""")
 print("\nMevcut constraints:")
 for c in cur.fetchall():
     print(f"  {c[0]:40s} {c[1]}")
 
-cur.execute("SELECT * FROM cities LIMIT 5;")
+# ── Örnek kayıtlar ──────────────────────────────────────────
+cur.execute("SELECT * FROM departments LIMIT 5;")
 rows = cur.fetchall()
 print(f"\nMevcut kayitlar ({len(rows)} adet):")
 for r in rows:
     print(" ", r)
+
+# ── Özet sayım ──────────────────────────────────────────────
+cur.execute("""
+    SELECT
+        (SELECT COUNT(*) FROM departments)    AS total_departments,
+        (SELECT COUNT(*) FROM universities)   AS total_universities,
+        (SELECT COUNT(DISTINCT uni_id) FROM departments) AS unis_with_depts,
+        (SELECT COUNT(*) FROM departments WHERE uni_id IS NULL) AS orphan_depts;
+""")
+row = cur.fetchone()
+print(f"\nÖzet:")
+print(f"  Toplam bölüm       : {row[0]}")
+print(f"  Toplam üniversite  : {row[1]}")
+print(f"  Bölümü olan üni    : {row[2]}")
+print(f"  Üniversitesiz bölüm: {row[3]}")
 
 cur.close()
 conn.close()

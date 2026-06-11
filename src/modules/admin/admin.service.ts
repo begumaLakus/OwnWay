@@ -84,17 +84,21 @@ export const createDepartmentService = async (data: any) => {
     quota: parseInt(data.quota) || 0,
     base_score: parseFloat(data.base_score) || 0,
     base_rank: parseInt(data.base_rank) || 0,
+    female_student_count: data.female_student_count !== undefined ? parseInt(data.female_student_count) : undefined,
+    male_student_count:   data.male_student_count   !== undefined ? parseInt(data.male_student_count)   : undefined,
   });
 };
 
 export const updateDepartmentService = async (deptId: number, data: any) =>
   repo.updateDepartment(deptId, {
-    uni_id: data.uni_id ? parseInt(data.uni_id) : undefined,
-    dept_name: data.dept_name?.trim(),
-    language: data.language,
-    quota: data.quota !== undefined ? parseInt(data.quota) : undefined,
-    base_score: data.base_score !== undefined ? parseFloat(data.base_score) : undefined,
-    base_rank: data.base_rank !== undefined ? parseInt(data.base_rank) : undefined,
+    uni_id:               data.uni_id       ? parseInt(data.uni_id)           : undefined,
+    dept_name:            data.dept_name?.trim(),
+    language:             data.language,
+    quota:                data.quota                !== undefined ? parseInt(data.quota)                : undefined,
+    base_score:           data.base_score           !== undefined ? parseFloat(data.base_score)         : undefined,
+    base_rank:            data.base_rank             !== undefined ? parseInt(data.base_rank)            : undefined,
+    female_student_count: data.female_student_count !== undefined ? parseInt(data.female_student_count) : undefined,
+    male_student_count:   data.male_student_count   !== undefined ? parseInt(data.male_student_count)   : undefined,
   });
 
 export const deleteDepartmentService = async (deptId: number) =>
