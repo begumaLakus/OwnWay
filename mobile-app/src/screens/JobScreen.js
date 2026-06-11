@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Image, Dimensions, Platform } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
 const JobScreen = () => {
+  const { colors, isDarkMode } = useTheme();
   const [selectedJob, setSelectedJob] = useState(null);
 
   const jobs = [
@@ -50,24 +52,28 @@ const JobScreen = () => {
   ];
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Meslek Kütüphanesi</Text>
-        <Text style={styles.headerSubtitle}>Karakterine en yakın olanı keşfet.</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Meslek Kütüphanesi</Text>
+        <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Karakterine en yakın olanı keşfet.</Text>
       </View>
       
       <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
         {jobs.map((job) => (
           <TouchableOpacity 
             key={job.id} 
-            style={[styles.jobCard, { backgroundColor: job.color }]}
+            style={[styles.jobCard, { 
+              backgroundColor: isDarkMode ? colors.cardBackground : job.color,
+              borderColor: isDarkMode ? colors.border : 'transparent',
+              borderWidth: isDarkMode ? 1 : 0
+            }]}
             onPress={() => setSelectedJob(job)}
           >
             <View>
-              <Text style={styles.jobTitle}>{job.title}</Text>
-              <Text style={styles.jobCharShort}>{job.character}</Text>
+              <Text style={[styles.jobTitle, { color: colors.text }]}>{job.title}</Text>
+              <Text style={[styles.jobCharShort, { color: colors.textSecondary }]}>{job.character}</Text>
             </View>
-            <View style={styles.arrowCircle}>
+            <View style={[styles.arrowCircle, isDarkMode && { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
               <Text style={styles.arrow}>→</Text>
             </View>
           </TouchableOpacity>
@@ -77,20 +83,20 @@ const JobScreen = () => {
       {/* Meslek Detay Modalı */}
       <Modal visible={selectedJob !== null} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { backgroundColor: colors.modalBackground }]}>
             <Image 
   source={typeof selectedJob?.image === 'string' ? { uri: selectedJob.image } : selectedJob?.image} 
   style={styles.jobImage} 
 />
             
             <View style={styles.paddingArea}>
-              <Text style={styles.modalTitle}>{selectedJob?.title}</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>{selectedJob?.title}</Text>
               
-              <View style={styles.tag}>
+              <View style={[styles.tag, isDarkMode && { backgroundColor: '#1E3A8A' }]}>
                 <Text style={styles.tagText}>✨ {selectedJob?.character}</Text>
               </View>
 
-              <Text style={styles.modalDesc}>{selectedJob?.desc}</Text>
+              <Text style={[styles.modalDesc, { color: colors.textSecondary }]}>{selectedJob?.desc}</Text>
 
               <TouchableOpacity 
                 style={styles.closeButton} 
@@ -107,7 +113,7 @@ const JobScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', paddingTop: 60 },
+  container: { flex: 1, backgroundColor: '#F8FBFF', paddingTop: 60 },
   header: { paddingHorizontal: 25, marginBottom: 20 },
   headerTitle: { fontSize: 32, fontWeight: '800', color: '#333', letterSpacing: -0.5 },
   headerSubtitle: { fontSize: 16, color: '#8E8E93', marginTop: 5 },

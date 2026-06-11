@@ -3,6 +3,7 @@ import { StyleSheet, View, Text, TouchableOpacity, Dimensions, ActivityIndicator
 import api from './src/screens/api';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 
 // Sayfa Importları
 import LoginScreen from './src/screens/LoginScreen'; 
@@ -17,7 +18,7 @@ import PersonalityTestScreen from './src/screens/PersonalityTestScreen';
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const Tab = createBottomTabNavigator();
 
-export default function App() {
+function MainApp() {
   const [user, setUser] = useState(null);
   const [appState, setAppState] = useState('login');
 
@@ -196,20 +197,22 @@ export default function App() {
 
   // 5. ANA UYGULAMA (Giriş tamamlandıktan sonra)
   return (
-    <Tab.Navigator screenOptions={{ headerShown: false }} tabBar={(props) => <CustomTabBar {...props} />}>
-      
+    <Tab.Navigator
+      screenOptions={{ headerShown: false }}
+      tabBar={(props) => <CustomTabBar {...props} />}
+    >
       <Tab.Screen name="Ana Sayfa" component={HomeScreen} />
       <Tab.Screen name="Meslekler" component={JobScreen} />
       <Tab.Screen name="Harita" component={MapScreen} />
-      <Tab.Screen name="Profil">
+      <Tab.Screen name="Profil" options={{ headerShown: false }}>
   {() => (
-    <ProfileScreen 
-      user={user} 
-      scores={userScores} 
+    <ProfileScreen
+      user={user}
+      scores={userScores}
       onLogout={() => {
         setAppState('login');
         setCurrentQ(0);
-      }} 
+      }}
       onResetTest={() => {
         setCurrentQ(0);
         setAppState('form');
@@ -415,12 +418,13 @@ const TAB_CONFIG = [
 ];
 
 function CustomTabBar({ state, descriptors, navigation }) {
+  const { colors } = useTheme();
   const VISIBLE_TABS = ['Ana Sayfa', 'Meslekler', 'Harita', 'Profil'];
   const visibleRoutes = state.routes.filter((route) => VISIBLE_TABS.includes(route.name));
 
   return (
     <View style={tabBarStyles.wrapper}>
-      <View style={tabBarStyles.container}>
+      <View style={[tabBarStyles.container, { backgroundColor: colors.tabBar, borderColor: colors.border, shadowColor: colors.shadow }]}>
         {visibleRoutes.map((route) => {
           const isFocused = state.index === state.routes.indexOf(route);
           const cfg = TAB_CONFIG.find((t) => t.name === route.name) || TAB_CONFIG[0];
@@ -439,14 +443,17 @@ function CustomTabBar({ state, descriptors, navigation }) {
               activeOpacity={0.75}
               style={tabBarStyles.tab}
             >
-              {isFocused && <View style={tabBarStyles.activePill} />}
+              {isFocused && <View style={[tabBarStyles.activePill, { backgroundColor: colors.primary + '20' }]} />}
               <Ionicons
                 name={isFocused ? cfg.iconActive : cfg.icon}
                 size={22}
-                color={isFocused ? '#4A90E2' : '#BDBDBD'}
+                color={isFocused ? colors.primary : colors.tabBarInactive}
                 style={{ zIndex: 1 }}
               />
-              <Text style={[tabBarStyles.label, isFocused && tabBarStyles.labelActive]}>
+              <Text style={[
+                tabBarStyles.label, 
+                isFocused ? { color: colors.primary, fontWeight: '700' } : { color: colors.tabBarInactive }
+              ]}>
                 {cfg.label}
               </Text>
             </TouchableOpacity>
@@ -506,3 +513,11 @@ const tabBarStyles = StyleSheet.create({
     fontWeight: '700',
   },
 });
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <MainApp />
+    </ThemeProvider>
+  );
+}

@@ -2,8 +2,12 @@ import React, { useEffect, useMemo, useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   Dimensions, ActivityIndicator, Modal, TextInput,
-  KeyboardAvoidingView, Platform, Animated, Alert, SafeAreaView
+  KeyboardAvoidingView, Platform, Animated, Alert, SafeAreaView, Switch, Image
 } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from './api';
 import { personalityQuestions } from '../data/questions';
 
@@ -215,11 +219,39 @@ const PersonalityTestModal = ({ visible, onClose, onComplete, user }) => {
 
 // ─── PROFİL EKRANI ────────────────────────────────────────────────────────────
 const ProfileScreen = ({ user, onLogout, scores, onResetTest, onUserUpdate }) => {
+  const { colors, isDarkMode, toggleTheme } = useTheme();
   const [showResult, setShowResult] = useState(false);
   const [authData, setAuthData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [personalityModalVisible, setPersonalityModalVisible] = useState(false);
+  const [avatarUri, setAvatarUri] = useState(null);
+
+  // Avatar fotoğrafını AsyncStorage'dan yükleme
+  useEffect(() => {
+    AsyncStorage.getItem('user_avatar').then((uri) => {
+      if (uri) setAvatarUri(uri);
+    });
+  }, []);
+
+  const pickAvatar = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('İzin Gerekli', 'Galeri erişim izni verilmedi.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      const uri = result.assets[0].uri;
+      setAvatarUri(uri);
+      await AsyncStorage.setItem('user_avatar', uri);
+    }
+  };
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -302,142 +334,196 @@ const ProfileScreen = ({ user, onLogout, scores, onResetTest, onUserUpdate }) =>
   }, [user]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* 1. ÜST ALAN */}
-        <View style={styles.headerArea}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarLetter}>{(fullName || user?.email || 'U')[0].toUpperCase()}</Text>
-            <View style={styles.onlineDot} />
-          </View>
-          <View style={styles.userTextInfo}>
-            <View style={styles.nameRow}>
-              <Text style={styles.userName}>{fullName || user?.email || 'Kullanici'}</Text>
+
+        {/* ── HERO HEADER ── */}
+        <View style={[styles.heroCard, { backgroundColor: isDarkMode ? '#1E293B' : '#FFFFFF', borderColor: isDarkMode ? '#334155' : '#EEF3FB' }]}>
+          {/* Avatar */}
+          <TouchableOpacity style={styles.avatarWrapper} onPress={pickAvatar} activeOpacity={0.85}>
+            <View style={[styles.avatarRing, { borderColor: isDarkMode ? '#4A90E2' : '#C8DEFF' }]}>
+              {avatarUri ? (
+                <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
+              ) : (
+                <View style={styles.avatar}>
+                  <Text style={styles.avatarLetter}>{(fullName || user?.email || 'U')[0].toUpperCase()}</Text>
+                </View>
+              )}
             </View>
-            <Text style={styles.userSub}>OwnWay Üyesi</Text>
+            {/* Kamera ikonu */}
+            <View style={[styles.cameraIcon, { backgroundColor: isDarkMode ? '#334155' : '#F1F5F9', borderColor: isDarkMode ? '#475569' : '#E2E8F0' }]}>
+              <Ionicons name="camera-outline" size={12} color={isDarkMode ? '#94A3B8' : '#64748B'} />
+            </View>
+          </TouchableOpacity>
+
+          {/* İsim & Email */}
+          <Text style={[styles.userName, { color: colors.text }]} numberOfLines={1}>
+            {fullName || 'Kullanıcı'}
+          </Text>
+          <Text style={styles.userEmail} numberOfLines={1}>
+            {authData?.email || user?.email || ''}
+          </Text>
+
+          {/* Badge */}
+          <View style={styles.badgeRow}>
+            <View style={[styles.badge, { backgroundColor: isDarkMode ? '#1E3A5F' : '#EEF4FF' }]}>
+              <Text style={styles.badgeText}>✦ OwnWay Üyesi</Text>
+            </View>
+            {authData?.personality_type ? (
+              <View style={[styles.badge, { backgroundColor: isDarkMode ? '#1E3B2F' : '#F0FFF8', marginLeft: 8 }]}>
+                <Text style={[styles.badgeText, { color: isDarkMode ? '#6EE7B7' : '#059669' }]}>
+                  {authData.personality_type}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+
+          {/* Bilgi Satırları */}
+          <View style={[styles.infoStrip, { borderTopColor: isDarkMode ? '#334155' : '#F0F4FB' }]}>
+            <View style={styles.infoStripItem}>
+              <Text style={styles.infoStripLabel}>KONUM</Text>
+              <Text style={[styles.infoStripValue, { color: colors.text }]} numberOfLines={1}>
+                {user?.current_location || '—'}
+              </Text>
+            </View>
+            <View style={[styles.infoStripDivider, { backgroundColor: isDarkMode ? '#334155' : '#E8EFF8' }]} />
+            <View style={styles.infoStripItem}>
+              <Text style={styles.infoStripLabel}>OKUL</Text>
+              <Text style={[styles.infoStripValue, { color: colors.text }]} numberOfLines={1}>
+                {user?.high_school || '—'}
+              </Text>
+            </View>
+            <View style={[styles.infoStripDivider, { backgroundColor: isDarkMode ? '#334155' : '#E8EFF8' }]} />
+            <View style={styles.infoStripItem}>
+              <Text style={styles.infoStripLabel}>BÖLÜM</Text>
+              <Text style={[styles.infoStripValue, { color: colors.text }]} numberOfLines={1}>
+                {user?.dept_type || '—'}
+              </Text>
+            </View>
           </View>
         </View>
 
-        {/* 2. MESLEK ANALİZ TESTİ BUTONU */}
-        <TouchableOpacity style={styles.testSolveBtn} onPress={() => setPersonalityModalVisible(true)}>
-          <View style={styles.testIconBox}>
-            <Text style={{fontSize: 20}}>📝</Text>
-          </View>
-          <View style={{marginLeft: 15}}>
-            <Text style={styles.testSolveTitle}>Meslek Analiz Testi</Text>
-            <Text style={styles.testSolveSub}>Sana en uygun Mesleği bulalım</Text>
+        {/* ── KİŞİLİK TİPİ KARTI ── */}
+        {(() => {
+          const RIASEC_MAP = {
+            R: { label: 'Gerçekçi', desc: 'El becerisi yüksek, pratik ve sistemli' },
+            I: { label: 'Araştırmacı', desc: 'Analitik, meraklı ve problem çözücü' },
+            A: { label: 'Sanatsal', desc: 'Yaratıcı, sezgisel ve özgün' },
+            S: { label: 'Sosyal', desc: 'Empatik, yardımsever ve iletişimçi' },
+            E: { label: 'Girişimci', desc: 'Lider ruhlu, ikna edici ve enerjik' },
+            C: { label: 'Geleneksel', desc: 'Detaylı, organize ve güvenilir' },
+          };
+          const pType = authData?.personality_type;
+          const info = pType ? RIASEC_MAP[pType] : null;
+          return (
+            <View style={[styles.personalityCard, { backgroundColor: isDarkMode ? '#1E293B' : '#FFFFFF', borderColor: isDarkMode ? '#334155' : '#EEF3FB' }]}>
+              <View style={styles.personalityLeft}>
+                <Ionicons name="person-outline" size={16} color={isDarkMode ? '#94A3B8' : '#334155'} style={{ marginRight: 12 }} />
+                <View>
+                  <Text style={[styles.personalityLabel, { color: isDarkMode ? '#64748B' : '#94A3B8' }]}>KİŞİLİK TİPİ</Text>
+                  <Text style={[styles.personalityValue, { color: colors.text }]}>{info?.label || '—'}</Text>
+                  {info?.desc && (
+                    <Text style={[styles.personalityDesc, { color: isDarkMode ? '#475569' : '#94A3B8' }]}>{info.desc}</Text>
+                  )}
+                </View>
+              </View>
+            </View>
+          );
+        })()}
+
+        {/* ── MESLEK ANALİZ TESTİ ── */}
+        <TouchableOpacity
+          style={[styles.testSolveBtn, {
+            backgroundColor: isDarkMode ? '#1E293B' : '#FFFFFF',
+            borderColor: isDarkMode ? '#334155' : '#EEF3FB',
+          }]}
+          activeOpacity={0.7}
+          onPress={() => setPersonalityModalVisible(true)}
+        >
+          <View style={styles.menuLeft}>
+            <Ionicons name="compass-outline" size={18} color={isDarkMode ? '#94A3B8' : '#334155'} style={styles.menuIcon} />
+            <Text style={[styles.testSolveTitle, { color: colors.text }]}>Meslek Analiz Testi</Text>
           </View>
           <Text style={styles.arrowIcon}>›</Text>
         </TouchableOpacity>
 
-        {/* 3. KİŞİSEL BİLGİLER */}
-        <Text style={styles.sectionTitle}>KİŞİSEL BİLGİLER</Text>
-        <View style={styles.infoGrid}>
-          <View style={styles.infoRow}>
-            <InfoTile label="Konum" value={user?.current_location || '-'} />
-            <InfoTile label="E-Posta" value={authData?.email || user?.email || '-'} isLast />
-          </View>
-          <View style={styles.infoRow}>
-            <InfoTile label="Okul" value={user?.high_school || '-'} />
-            <InfoTile label="Bölüm" value={user?.dept_type || '-'} isLast />
-          </View>
-          <View style={styles.infoRow}>
-            <InfoTile label="Kişilik tipi" value={user?.personality_type || '-'} isFull />
-          </View>
-        </View>
+        {/* ── AYARLAR KARTI ── */}
+        <Text style={[styles.sectionTitle, { color: isDarkMode ? '#64748B' : '#BDBDBD' }]}>TERCİHLER</Text>
+        <View style={[styles.menuList, { backgroundColor: isDarkMode ? '#1E293B' : '#FFFFFF', borderColor: isDarkMode ? '#334155' : '#EEF3FB' }]}>
 
-        {/* 4. TERCİHLER VE TEST SONUCU */}
-        <Text style={styles.sectionTitle}>TERCİHLER</Text>
-        <View style={styles.menuList}>
+          {/* Test Sonucum */}
           <TouchableOpacity style={styles.menuRow} onPress={() => setShowResult(!showResult)}>
             <View style={styles.menuLeft}>
-              <View style={[styles.iconSquare, { backgroundColor: '#E8F0FE' }]}>
-                <Text style={{fontSize: 16}}>📊</Text>
-              </View>
-              <Text style={styles.menuLabel}>Test Sonucum</Text>
+              <Ionicons name="bar-chart-outline" size={18} color={isDarkMode ? '#94A3B8' : '#334155'} style={styles.menuIcon} />
+              <Text style={[styles.menuLabel, { color: colors.text }]}>Test Sonucum</Text>
             </View>
             <Text style={[styles.arrowIcon, { transform: [{ rotate: showResult ? '90deg' : '0deg' }] }]}>›</Text>
           </TouchableOpacity>
 
           {showResult && (
-            <View style={styles.resultDetails}>
+            <View style={[styles.resultDetails, { backgroundColor: isDarkMode ? '#0F172A' : '#F4F8FF', borderColor: isDarkMode ? '#334155' : '#D0E5FF' }]}>
               {loading ? (
                 <ActivityIndicator color="#4A90E2" style={{ marginVertical: 10 }} />
               ) : (() => {
                 const cities = authData?.matched_cities;
                 const careers = authData?.career_suggestions;
-                const RANK_CONFIG = [
-                  { medal: '🥇', bg: '#FFF8E1', border: '#FFD54F', textColor: '#F57F17', label: '1. Öneri' },
-                  { medal: '🥈', bg: '#F5F5F5', border: '#BDBDBD', textColor: '#424242', label: '2. Öneri' },
-                  { medal: '🥉', bg: '#FBE9E7', border: '#FFAB91', textColor: '#BF360C', label: '3. Öneri' },
-                ];
-                const CAREER_CONFIG = [
-                  { medal: '💼', bg: '#F0FFF4', border: '#6FCF97', textColor: '#27AE60', label: '1. Meslek' },
-                  { medal: '🌟', bg: '#F0F4FF', border: '#A78BFA', textColor: '#7C3AED', label: '2. Meslek' },
-                  { medal: '🚀', bg: '#FFF5F0', border: '#FDA29B', textColor: '#E04D2B', label: '3. Meslek' },
-                ];
                 const hasCities = cities && cities.length > 0;
                 const hasCareers = careers && careers.length > 0;
-
                 return (
                   <View>
                     {hasCities && (
                       <View>
-                        <Text style={styles.resultHeader}>✨ Sana Özel Şehir Önerileri</Text>
+                        <Text style={[styles.resultHeader, { color: isDarkMode ? '#94A3B8' : '#64748B' }]}>Şehir Önerileri</Text>
                         {cities.slice(0, 3).map((item, index) => {
                           const cityName = item?.city?.city_name || item?.city_name || '?';
-                          const cfg = RANK_CONFIG[index] || RANK_CONFIG[2];
                           return (
-                            <View key={index} style={[styles.cityCard, { backgroundColor: cfg.bg, borderColor: cfg.border }]}>
-                              <Text style={styles.cityMedal}>{cfg.medal}</Text>
-                              <View style={styles.cityCardText}>
-                                <Text style={[styles.cityRankLabel, { color: cfg.textColor }]}>{cfg.label}</Text>
-                                <Text style={styles.cityName}>{cityName}</Text>
-                              </View>
+                            <View key={index} style={[styles.resultRow, { borderBottomColor: isDarkMode ? '#1E293B' : '#F1F5F9' }]}>
+                              <Text style={[styles.resultIndex, { color: isDarkMode ? '#475569' : '#CBD5E1' }]}>{index + 1}</Text>
+                              <Text style={[styles.resultName, { color: colors.text }]}>{cityName}</Text>
                             </View>
                           );
                         })}
-                        <TouchableOpacity style={styles.reSolveBtn} onPress={onResetTest}>
-                          <Text style={styles.reSolveText}>🏙️ Şehir Testini Tekrar Çöz</Text>
+                        <TouchableOpacity style={[styles.reSolveBtn, { borderColor: isDarkMode ? '#334155' : '#E2E8F0' }]} onPress={onResetTest}>
+                          <View style={styles.menuLeft}>
+                            <Ionicons name="refresh-outline" size={14} color={isDarkMode ? '#94A3B8' : '#64748B'} style={{ marginRight: 6 }} />
+                            <Text style={[styles.reSolveText, { color: isDarkMode ? '#94A3B8' : '#64748B' }]}>Şehir Testini Tekrar Çöz</Text>
+                          </View>
                         </TouchableOpacity>
                       </View>
                     )}
-
                     {hasCareers && (
-                      <View style={{ marginTop: hasCities ? 16 : 0 }}>
-                        <Text style={styles.resultHeader}>💼 Sana Özel Meslek Önerileri</Text>
+                      <View style={{ marginTop: hasCities ? 20 : 0 }}>
+                        <Text style={[styles.resultHeader, { color: isDarkMode ? '#94A3B8' : '#64748B' }]}>Meslek Önerileri</Text>
                         {careers.slice(0, 3).map((item, index) => {
                           const meslekAdi = item?.occupation_name || '?';
-                          const cfg = CAREER_CONFIG[index] || CAREER_CONFIG[2];
                           return (
-                            <View key={index} style={[styles.cityCard, { backgroundColor: cfg.bg, borderColor: cfg.border }]}>
-                              <Text style={styles.cityMedal}>{cfg.medal}</Text>
-                              <View style={styles.cityCardText}>
-                                <Text style={[styles.cityRankLabel, { color: cfg.textColor }]}>{cfg.label}</Text>
-                                <Text style={styles.cityName}>{meslekAdi}</Text>
-                              </View>
+                            <View key={index} style={[styles.resultRow, { borderBottomColor: isDarkMode ? '#1E293B' : '#F1F5F9' }]}>
+                              <Text style={[styles.resultIndex, { color: isDarkMode ? '#475569' : '#CBD5E1' }]}>{index + 1}</Text>
+                              <Text style={[styles.resultName, { color: colors.text }]}>{meslekAdi}</Text>
                             </View>
                           );
                         })}
-                        <TouchableOpacity
-                          style={[styles.reSolveBtn, styles.reSolveBtnCareer]}
-                          onPress={() => setPersonalityModalVisible(true)}
-                        >
-                          <Text style={[styles.reSolveText, styles.reSolveTextCareer]}>📝 Meslek Testini Tekrar Çöz</Text>
+                        <TouchableOpacity style={[styles.reSolveBtn, { borderColor: isDarkMode ? '#334155' : '#E2E8F0' }]} onPress={() => setPersonalityModalVisible(true)}>
+                          <View style={styles.menuLeft}>
+                            <Ionicons name="refresh-outline" size={14} color={isDarkMode ? '#94A3B8' : '#64748B'} style={{ marginRight: 6 }} />
+                            <Text style={[styles.reSolveText, { color: isDarkMode ? '#94A3B8' : '#64748B' }]}>Meslek Testini Tekrar Çöz</Text>
+                          </View>
                         </TouchableOpacity>
                       </View>
                     )}
-
                     {!hasCities && !hasCareers && (
-                      <View style={{ gap: 8 }}>
-                        <TouchableOpacity style={styles.reSolveBtn} onPress={onResetTest}>
-                          <Text style={styles.reSolveText}>🏙️ Şehir Testini Başlat</Text>
+                      <View style={{ gap: 10 }}>
+                        <TouchableOpacity style={[styles.reSolveBtn, { borderColor: isDarkMode ? '#334155' : '#E2E8F0' }]} onPress={onResetTest}>
+                          <View style={styles.menuLeft}>
+                            <Ionicons name="map-outline" size={14} color={isDarkMode ? '#94A3B8' : '#64748B'} style={{ marginRight: 6 }} />
+                            <Text style={[styles.reSolveText, { color: isDarkMode ? '#94A3B8' : '#64748B' }]}>Şehir Testini Başlat</Text>
+                          </View>
                         </TouchableOpacity>
-                        <TouchableOpacity
-                          style={[styles.reSolveBtn, styles.reSolveBtnCareer]}
-                          onPress={() => setPersonalityModalVisible(true)}
-                        >
-                          <Text style={[styles.reSolveText, styles.reSolveTextCareer]}>📝 Meslek Testini Başlat</Text>
+                        <TouchableOpacity style={[styles.reSolveBtn, { borderColor: isDarkMode ? '#334155' : '#E2E8F0' }]} onPress={() => setPersonalityModalVisible(true)}>
+                          <View style={styles.menuLeft}>
+                            <Ionicons name="compass-outline" size={14} color={isDarkMode ? '#94A3B8' : '#64748B'} style={{ marginRight: 6 }} />
+                            <Text style={[styles.reSolveText, { color: isDarkMode ? '#94A3B8' : '#64748B' }]}>Meslek Testini Başlat</Text>
+                          </View>
                         </TouchableOpacity>
                       </View>
                     )}
@@ -447,14 +533,28 @@ const ProfileScreen = ({ user, onLogout, scores, onResetTest, onUserUpdate }) =>
             </View>
           )}
 
-          <View style={styles.divider} />
-          <MenuRow icon="✏️" label="Bilgilerimi Güncelle" color="#E2FBE7" onPress={openEditModal} />
+          <View style={[styles.divider, { backgroundColor: isDarkMode ? '#1E293B' : '#F4F6FA', marginLeft: 0 }]} />
+          <MenuRow label="Bilgilerimi Güncelle" onPress={openEditModal} colors={colors} isDarkMode={isDarkMode} />
+
+          <View style={[styles.divider, { backgroundColor: isDarkMode ? '#1E293B' : '#F4F6FA', marginLeft: 0 }]} />
+          <View style={[styles.menuRow, { paddingVertical: 12 }]}>
+            <View style={styles.menuLeft}>
+              <Ionicons name="moon-outline" size={18} color={isDarkMode ? '#94A3B8' : '#334155'} style={styles.menuIcon} />
+              <Text style={[styles.menuLabel, { color: colors.text }]}>Karanlık Mod</Text>
+            </View>
+            <Switch
+              value={isDarkMode}
+              onValueChange={toggleTheme}
+              trackColor={{ false: '#E2E8F0', true: '#4A90E2' }}
+              thumbColor="#FFFFFF"
+            />
+          </View>
         </View>
 
-        {/* 5. ÇIKIŞ YAP */}
+        {/* ── FOOTER ── */}
         <View style={styles.footer}>
           <Text style={styles.versionText}>Uygulama Versiyonu 1.0.1</Text>
-          <TouchableOpacity style={styles.logoutBtn} onPress={onLogout}>
+          <TouchableOpacity style={styles.logoutBtn} onPress={onLogout} activeOpacity={0.8}>
             <Text style={styles.logoutText}>Çıkış Yap</Text>
           </TouchableOpacity>
         </View>
@@ -462,7 +562,7 @@ const ProfileScreen = ({ user, onLogout, scores, onResetTest, onUserUpdate }) =>
         <View style={{ height: 120 }} />
       </ScrollView>
 
-      {/* 6. KİŞİLİK TESTİ MODALİ */}
+      {/* KİŞİLİK TESTİ MODALİ */}
       <PersonalityTestModal
         visible={personalityModalVisible}
         onClose={() => setPersonalityModalVisible(false)}
@@ -470,7 +570,7 @@ const ProfileScreen = ({ user, onLogout, scores, onResetTest, onUserUpdate }) =>
         user={user}
       />
 
-      {/* 7. PROFİL DÜZENLEME MODALİ */}
+      {/* PROFİL DÜZENLEME MODALİ */}
       <Modal visible={editModalVisible} transparent animationType="none" onRequestClose={closeEditModal}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={closeEditModal} />
         <Animated.View style={[styles.modalSheet, { transform: [{ translateY: slideAnim }] }]}>
@@ -480,7 +580,6 @@ const ProfileScreen = ({ user, onLogout, scores, onResetTest, onUserUpdate }) =>
               <Text style={styles.modalTitle}>✏️ Profil Bilgilerini Düzenle</Text>
               <Text style={styles.modalSub}>Bilgilerini güncelleyerek profilini kişiselleştir</Text>
             </View>
-
             <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 440 }}>
               <Text style={styles.inputLabel}>Ad</Text>
               <TextInput style={styles.inputField} value={editForm.first_name} onChangeText={(v) => setEditForm((f) => ({ ...f, first_name: v }))} placeholder="Adın" placeholderTextColor="#BDBDBD" />
@@ -493,7 +592,6 @@ const ProfileScreen = ({ user, onLogout, scores, onResetTest, onUserUpdate }) =>
               <Text style={styles.inputLabel}>Bölüm</Text>
               <TextInput style={styles.inputField} value={editForm.dept_type} onChangeText={(v) => setEditForm((f) => ({ ...f, dept_type: v }))} placeholder="Ör: Sayısal, Sözel, Eşit Ağırlık" placeholderTextColor="#BDBDBD" />
             </ScrollView>
-
             <View style={styles.modalBtnRow}>
               <TouchableOpacity style={styles.cancelBtn} onPress={closeEditModal}>
                 <Text style={styles.cancelBtnText}>Vazgeç</Text>
@@ -509,82 +607,223 @@ const ProfileScreen = ({ user, onLogout, scores, onResetTest, onUserUpdate }) =>
   );
 };
 
-const InfoTile = ({ label, value, isLast, isFull }) => (
-  <View style={[styles.infoTile, { marginRight: isLast ? 0 : 10, flex: isFull ? 1 : 1 }]}>
-    <Text style={styles.tileLabel}>{label}</Text>
-    <Text style={styles.tileValue} numberOfLines={1}>{value}</Text>
-  </View>
-);
-
-const MenuRow = ({ icon, label, color, onPress }) => (
-  <TouchableOpacity style={styles.menuRow} onPress={onPress}>
+const MenuRow = ({ label, onPress, colors, isDarkMode }) => (
+  <TouchableOpacity style={styles.menuRow} onPress={onPress} activeOpacity={0.7}>
     <View style={styles.menuLeft}>
-      <View style={[styles.iconSquare, { backgroundColor: color }]}>
-        <Text style={{fontSize: 16}}>{icon}</Text>
-      </View>
-      <Text style={styles.menuLabel}>{label}</Text>
+      <Ionicons name="pencil-outline" size={18} color={isDarkMode ? '#94A3B8' : '#334155'} style={styles.menuIcon} />
+      <Text style={[styles.menuLabel, { color: colors?.text || '#1E293B' }]}>{label}</Text>
     </View>
     <Text style={styles.arrowIcon}>›</Text>
   </TouchableOpacity>
 );
 
 const styles = StyleSheet.create({
+  // ── Genel ──
   container: { flex: 1, backgroundColor: '#F8FBFF' },
-  scrollContent: { paddingHorizontal: 25, paddingTop: 60 },
-  headerArea: { flexDirection: 'row', alignItems: 'center', marginBottom: 30 },
-  avatar: { width: 70, height: 70, borderRadius: 35, backgroundColor: '#E0E0E0', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#FFF' },
-  avatarLetter: { fontSize: 28, fontWeight: 'bold', color: '#777' },
-  onlineDot: { width: 14, height: 14, borderRadius: 7, backgroundColor: '#4CD964', position: 'absolute', bottom: 2, right: 2, borderWidth: 2, borderColor: '#F8FBFF' },
-  userTextInfo: { marginLeft: 15 },
-  nameRow: { flexDirection: 'row', alignItems: 'center' },
-  userName: { fontSize: 22, fontWeight: 'bold', color: '#333' },
-  userSub: { fontSize: 13, color: '#8E8E93', marginTop: 2 },
-  testSolveBtn: { backgroundColor: '#4A90E2', padding: 20, borderRadius: 25, flexDirection: 'row', alignItems: 'center', marginBottom: 30 },
-  testIconBox: { width: 45, height: 45, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
-  testSolveTitle: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
-  testSolveSub: { color: 'rgba(255,255,255,0.8)', fontSize: 12, marginTop: 2 },
-  sectionTitle: { fontSize: 12, fontWeight: 'bold', color: '#BDBDBD', marginBottom: 15, letterSpacing: 1 },
-  infoGrid: { marginBottom: 20 },
-  infoRow: { flexDirection: 'row', marginBottom: 10 },
-  infoTile: { flex: 1, backgroundColor: '#FFF', padding: 15, borderRadius: 20, borderWidth: 1, borderColor: '#F0F0F0' },
-  tileLabel: { fontSize: 9, color: '#BDBDBD', fontWeight: 'bold', marginBottom: 5 },
-  tileValue: { fontSize: 13, fontWeight: '600', color: '#444' },
-  menuList: { backgroundColor: '#FFF', borderRadius: 25, paddingHorizontal: 15, borderWidth: 1, borderColor: '#F0F0F0' },
-  menuRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 15 },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 56, paddingBottom: 20 },
+
+  // ── Hero Kart ──
+  heroCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: '#EEF3FB',
+    alignItems: 'center',
+    paddingTop: 32,
+    paddingBottom: 0,
+    marginBottom: 18,
+    shadowColor: '#4A90E2',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    elevation: 5,
+    overflow: 'hidden',
+  },
+  avatarWrapper: { position: 'relative', marginBottom: 14 },
+  avatarRing: {
+    width: 86, height: 86, borderRadius: 43,
+    borderWidth: 2.5, borderColor: '#C8DEFF',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  avatar: {
+    width: 76, height: 76, borderRadius: 38,
+    backgroundColor: '#4A90E2',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  avatarImage: {
+    width: 76, height: 76, borderRadius: 38,
+  },
+  avatarLetter: { fontSize: 32, fontWeight: '800', color: '#FFFFFF', letterSpacing: -1 },
+  cameraIcon: {
+    position: 'absolute', bottom: 0, right: 0,
+    width: 24, height: 24, borderRadius: 12,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1.5, borderColor: '#E2E8F0',
+  },
+  userName: { fontSize: 22, fontWeight: '800', color: '#1E293B', letterSpacing: -0.4, marginBottom: 4 },
+  userEmail: { fontSize: 13, color: '#94A3B8', fontWeight: '500', marginBottom: 14 },
+  badgeRow: { flexDirection: 'row', marginBottom: 20 },
+  badge: {
+    backgroundColor: '#EEF4FF',
+    paddingHorizontal: 14, paddingVertical: 6,
+    borderRadius: 20,
+  },
+  badgeText: { fontSize: 12, color: '#4A90E2', fontWeight: '700', letterSpacing: 0.3 },
+
+  // Bilgi Şeridi
+  infoStrip: {
+    flexDirection: 'row',
+    borderTopWidth: 1, borderTopColor: '#F0F4FB',
+    width: '100%',
+  },
+  infoStripItem: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 18, paddingHorizontal: 6 },
+  infoStripValue: { fontSize: 13, fontWeight: '700', color: '#1E293B', marginTop: 4, textAlign: 'center' },
+  infoStripLabel: { fontSize: 9, color: '#94A3B8', fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' },
+  infoStripDivider: { width: 1, backgroundColor: '#E8EFF8', marginVertical: 14 },
+
+  // ── Kişilik Tipi Kartı ──
+  personalityCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#EEF3FB',
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    marginBottom: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#4A90E2',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  personalityLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  personalityLabel: { fontSize: 9, fontWeight: '800', color: '#94A3B8', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 3 },
+  personalityValue: { fontSize: 16, fontWeight: '600', color: '#1E293B' },
+  personalityDesc: { fontSize: 12, color: '#94A3B8', marginTop: 2, fontWeight: '500' },
+
+  // ── Meslek Testi Butonu ──
+  testSolveBtn: {
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#EEF3FB',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    marginBottom: 24,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#4A90E2',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  testSolveTitle: { fontSize: 16, fontWeight: '600', color: '#1E293B' },
+
+  // ── Ayarlar Listesi ──
+  sectionTitle: { fontSize: 11, fontWeight: '800', color: '#BDBDBD', marginBottom: 12, letterSpacing: 1.2, marginLeft: 4 },
+  menuList: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    paddingHorizontal: 18,
+    borderWidth: 1, borderColor: '#EEF3FB',
+    shadowColor: '#4A90E2',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
+    marginBottom: 24,
+  },
+  menuRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14 },
   menuLeft: { flexDirection: 'row', alignItems: 'center' },
-  iconSquare: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  menuLabel: { marginLeft: 15, fontSize: 16, color: '#333', fontWeight: '500' },
-  arrowIcon: { fontSize: 22, color: '#D1D1D6', fontWeight: '300' },
-  divider: { height: 1, backgroundColor: '#F8F8F8', marginLeft: 55 },
-  resultDetails: { padding: 15, backgroundColor: '#F0F7FF', borderRadius: 20, marginBottom: 15, borderWidth: 1, borderColor: '#D0E5FF' },
-  resultHeader: { fontSize: 14, fontWeight: 'bold', color: '#4A90E2', textAlign: 'center', marginBottom: 12 },
-  noResultText: { fontSize: 13, color: '#8E8E93', textAlign: 'center', fontStyle: 'italic', marginVertical: 10 },
-  cityCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderWidth: 1.5, paddingVertical: 10, paddingHorizontal: 14, marginBottom: 8 },
-  cityMedal: { fontSize: 24, marginRight: 12 },
-  cityCardText: { flex: 1 },
-  cityRankLabel: { fontSize: 10, fontWeight: 'bold', letterSpacing: 0.5, marginBottom: 2 },
-  cityName: { fontSize: 16, fontWeight: 'bold', color: '#333' },
-  reSolveBtn: { backgroundColor: '#FFF', paddingVertical: 10, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: '#4A90E2', marginTop: 10 },
-  reSolveText: { color: '#4A90E2', fontWeight: 'bold', fontSize: 14 },
-  reSolveBtnCareer: { borderColor: '#27AE60' },
-  reSolveTextCareer: { color: '#27AE60' },
-  footer: { marginTop: 40, alignItems: 'center' },
-  versionText: { fontSize: 12, color: '#D1D1D6', marginBottom: 15 },
-  logoutBtn: { backgroundColor: '#FFF5F5', paddingHorizontal: 40, paddingVertical: 15, borderRadius: 20 },
-  logoutText: { color: '#FF3B30', fontWeight: 'bold', fontSize: 15 },
+  menuIcon: { marginRight: 12, opacity: 0.75 },
+  iconSquare: { width: 42, height: 42, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+  menuLabel: { marginLeft: 14, fontSize: 16, color: '#1E293B', fontWeight: '600' },
+  arrowIcon: { fontSize: 24, color: '#CBD5E1', fontWeight: '300' },
+  divider: { height: 1, backgroundColor: '#F4F6FA', marginLeft: 0 },
+
+  // ── Test Sonucu ──
+  resultDetails: {
+    paddingHorizontal: 4,
+    paddingTop: 4,
+    paddingBottom: 8,
+    marginBottom: 8,
+  },
+  resultHeader: {
+    fontSize: 10, fontWeight: '800',
+    color: '#64748B', letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 8, marginTop: 4,
+  },
+  resultRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  resultIndex: {
+    fontSize: 12, fontWeight: '800',
+    color: '#CBD5E1', width: 24,
+    textAlign: 'center',
+  },
+  resultName: {
+    fontSize: 15, fontWeight: '600',
+    color: '#1E293B', marginLeft: 10,
+    flex: 1,
+  },
+  reSolveBtn: {
+    flexDirection: 'row',
+    paddingVertical: 10,
+    borderRadius: 12, alignItems: 'center',
+    borderWidth: 1, borderColor: '#E2E8F0',
+    marginTop: 12, paddingHorizontal: 14,
+    backgroundColor: 'transparent',
+  },
+  reSolveText: { color: '#64748B', fontWeight: '600', fontSize: 13 },
+  reSolveBtnCareer: { borderColor: '#E2E8F0' },
+  reSolveTextCareer: { color: '#64748B' },
+
+  // ── Footer ──
+  footer: { alignItems: 'center', paddingTop: 8 },
+  versionText: { fontSize: 12, color: '#CBD5E1', marginBottom: 16, fontWeight: '500' },
+  logoutBtn: {
+    backgroundColor: '#FFF5F5', paddingHorizontal: 48,
+    paddingVertical: 16, borderRadius: 22,
+    borderWidth: 1, borderColor: '#FFD5D5',
+  },
+  logoutText: { color: '#EF4444', fontWeight: '700', fontSize: 15 },
+
+  // ── Düzenleme Modalı ──
   modalOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.45)' },
-  modalSheet: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFF', borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingHorizontal: 25, paddingBottom: 34, paddingTop: 12, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 20 },
-  modalDrag: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: '#E0E0E0', marginBottom: 18 },
-  modalHeader: { marginBottom: 20 },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', textAlign: 'center' },
-  modalSub: { fontSize: 12, color: '#BDBDBD', textAlign: 'center', marginTop: 4 },
-  inputLabel: { fontSize: 11, fontWeight: 'bold', color: '#9E9E9E', marginBottom: 6, marginTop: 12, letterSpacing: 0.5 },
-  inputField: { backgroundColor: '#F8FBFF', borderWidth: 1.5, borderColor: '#E8EFF8', borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12, fontSize: 15, color: '#333' },
+  modalSheet: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 32, borderTopRightRadius: 32,
+    paddingHorizontal: 24, paddingBottom: 34, paddingTop: 12,
+    shadowColor: '#000', shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.12, shadowRadius: 16, elevation: 24,
+  },
+  modalDrag: { alignSelf: 'center', width: 44, height: 4, borderRadius: 2, backgroundColor: '#E2E8F0', marginBottom: 20 },
+  modalHeader: { marginBottom: 22 },
+  modalTitle: { fontSize: 19, fontWeight: '800', color: '#1E293B', textAlign: 'center', letterSpacing: -0.3 },
+  modalSub: { fontSize: 13, color: '#94A3B8', textAlign: 'center', marginTop: 5 },
+  inputLabel: { fontSize: 11, fontWeight: '800', color: '#94A3B8', marginBottom: 7, marginTop: 14, letterSpacing: 0.8 },
+  inputField: {
+    backgroundColor: '#F8FBFF', borderWidth: 1.5,
+    borderColor: '#E2EEFF', borderRadius: 16,
+    paddingHorizontal: 18, paddingVertical: 14,
+    fontSize: 15, color: '#1E293B', fontWeight: '500',
+  },
   modalBtnRow: { flexDirection: 'row', marginTop: 24, gap: 12 },
-  cancelBtn: { flex: 1, paddingVertical: 15, borderRadius: 16, backgroundColor: '#F5F5F5', alignItems: 'center' },
-  cancelBtnText: { color: '#8E8E93', fontWeight: '600', fontSize: 15 },
-  saveBtn: { flex: 2, paddingVertical: 15, borderRadius: 16, backgroundColor: '#4A90E2', alignItems: 'center' },
-  saveBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 15 },
+  cancelBtn: { flex: 1, paddingVertical: 16, borderRadius: 18, backgroundColor: '#F1F5F9', alignItems: 'center' },
+  cancelBtnText: { color: '#64748B', fontWeight: '700', fontSize: 15 },
+  saveBtn: { flex: 2, paddingVertical: 16, borderRadius: 18, backgroundColor: '#4A90E2', alignItems: 'center' },
+  saveBtnText: { color: '#FFF', fontWeight: '800', fontSize: 15 },
 });
 
 const modalStyles = StyleSheet.create({
