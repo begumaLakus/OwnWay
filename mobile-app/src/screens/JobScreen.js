@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Modal, Dimensions, SafeAreaView, StatusBar
+  Modal, Dimensions, SafeAreaView, StatusBar, Image, Platform
 } from 'react-native';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Image, Dimensions, Platform } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
