@@ -7,17 +7,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─── KULLANICI ────────────────────────────────────────────
 model User {
   id                 Int                      @id @default(autoincrement())
-  email              String?                  @unique @db.VarChar(255)
-  password_hash      String?
-  role               String?                  @db.VarChar(50)
-
-  profile            User_Profile?
-  test_scores        User_Test_Score?
+  email              String                   @unique @db.VarChar(255)
+  password_hash      String                   @db.VarChar(255)
+  role               String?                  @default("USER") @db.VarChar(20)
   career_suggestions User_Career_Suggestion[]
   matched_cities     User_Matched_City[]
+  profile            User_Profile?
+  test_scores        User_Test_Score?
 
   @@map("users")
 }
@@ -28,34 +26,31 @@ model User_Profile {
   last_name        String?   @db.VarChar(100)
   current_location String?   @db.VarChar(100)
   high_school      String?   @db.VarChar(255)
-  dept_type        String?   @db.VarChar(50)
+  dept_type        String?   @db.VarChar(10)
   financial_status String?   @db.VarChar(50)
-  personality_type String?   @db.VarChar(50)
   created_at       DateTime? @default(now()) @db.Timestamp(6)
-
-  user             User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  personality_type String?   @db.VarChar(100)
+  user             User      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("user_profiles")
 }
 
 model User_Test_Score {
-  user_id   Int      @id
-  culture_w Decimal? @db.Decimal
-  nature_w  Decimal? @db.Decimal
-  social_w  Decimal? @db.Decimal
-  modern_w  Decimal? @db.Decimal
-
-  user      User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id   Int    @id
+  culture_w Float? @default(0.0)
+  nature_w  Float? @default(0.0)
+  social_w  Float? @default(0.0)
+  modern_w  Float? @default(0.0)
+  user      User   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("user_test_scores")
 }
 
 model User_Career_Suggestion {
-  id              Int     @id @default(autoincrement())
+  id              Int    @id @default(autoincrement())
   user_id         Int?
-  occupation_name String? @db.VarChar(255)
-
-  user            User?   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  occupation_name String @db.VarChar(255)
+  user            User?  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("user_career_suggestions")
 }
@@ -65,24 +60,21 @@ model User_Matched_City {
   user_id     Int?
   city_id     Int?
   match_order Int?
-
-  user        User? @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  city        City? @relation(fields: [city_id], references: [id], onDelete: Cascade)
+  city        City? @relation(fields: [city_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_city")
+  user        User? @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user")
 
   @@map("user_matched_cities")
 }
 
-// ─── ŞEHİR & ÜNİVERSİTE ─────────────────────────────────
 model City {
   id                  Int                 @id @default(autoincrement())
-  city_name           String?             @db.VarChar(100)
+  city_name           String              @db.VarChar(100)
   total_student_count Int?
-  culture_score       Decimal?            @db.Decimal
-  nature_score        Decimal?            @db.Decimal
-  social_score        Decimal?            @db.Decimal
-  modern_score        Decimal?            @db.Decimal
-  total_cost_index    Decimal?            @db.Decimal
-
+  culture_score       Float?
+  nature_score        Float?
+  social_score        Float?
+  modern_score        Float?
+  total_cost_index    Float?
   universities        University[]
   matched_users       User_Matched_City[]
 
@@ -92,13 +84,12 @@ model City {
 model University {
   id           Int          @id @default(autoincrement())
   city_id      Int?
-  uni_name     String?      @db.VarChar(255)
-  uni_type     String?      @db.VarChar(50)
-  has_campus   Boolean?
-  campus_count Int?
-
-  city         City?        @relation(fields: [city_id], references: [id], onDelete: Cascade)
+  uni_name     String       @db.VarChar(255)
+  uni_type     String?      @db.VarChar(20)
+  has_campus   Boolean?     @default(true)
+  campus_count Int?         @default(1)
   departments  Department[]
+  city         City?        @relation(fields: [city_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("universities")
 }
@@ -106,15 +97,20 @@ model University {
 model Department {
   id                   Int         @id @default(autoincrement())
   uni_id               Int?
-  dept_name            String?     @db.VarChar(255)
+  dept_name            String      @db.VarChar(255)
   base_rank            Int?
-  base_score           Decimal?    @db.Decimal
+  base_score           Float?
   language             String?     @db.VarChar(50)
   quota                Int?
   female_student_count Int?
   male_student_count   Int?
-
-  university           University? @relation(fields: [uni_id], references: [id], onDelete: Cascade)
+  university           University? @relation(fields: [uni_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("departments")
+}
+
+enum budget_level {
+  D___k  @map("Düşük")
+  Orta
+  Y_ksek @map("Yüksek")
 }
