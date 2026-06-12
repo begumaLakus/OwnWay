@@ -2,11 +2,10 @@ import React, { useEffect, useMemo, useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   Dimensions, ActivityIndicator, Modal, TextInput,
-  KeyboardAvoidingView, Platform, Animated, Alert, SafeAreaView, Switch, Image
+  KeyboardAvoidingView, Platform, Animated, Alert, SafeAreaView, Switch
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from './api';
 import { personalityQuestions } from '../data/questions';
@@ -210,33 +209,6 @@ const ProfileScreen = ({ user, onLogout, scores, onResetTest, onUserUpdate }) =>
   const [loading, setLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [personalityModalVisible, setPersonalityModalVisible] = useState(false);
-  const [avatarUri, setAvatarUri] = useState(null);
-
-  // Avatar fotoğrafını AsyncStorage'dan yükleme
-  useEffect(() => {
-    AsyncStorage.getItem('user_avatar').then((uri) => {
-      if (uri) setAvatarUri(uri);
-    });
-  }, []);
-
-  const pickAvatar = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('İzin Gerekli', 'Galeri erişim izni verilmedi.');
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-    if (!result.canceled && result.assets?.[0]?.uri) {
-      const uri = result.assets[0].uri;
-      setAvatarUri(uri);
-      await AsyncStorage.setItem('user_avatar', uri);
-    }
-  };
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -325,21 +297,13 @@ const ProfileScreen = ({ user, onLogout, scores, onResetTest, onUserUpdate }) =>
         {/* ── HERO HEADER ── */}
         <View style={[styles.heroCard, { backgroundColor: isDarkMode ? '#1E293B' : '#FFFFFF', borderColor: isDarkMode ? '#334155' : '#EEF3FB' }]}>
           {/* Avatar */}
-          <TouchableOpacity style={styles.avatarWrapper} onPress={pickAvatar} activeOpacity={0.85}>
+          <View style={styles.avatarWrapper}>
             <View style={[styles.avatarRing, { borderColor: isDarkMode ? '#4A90E2' : '#C8DEFF' }]}>
-              {avatarUri ? (
-                <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
-              ) : (
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarLetter}>{(fullName || user?.email || 'U')[0].toUpperCase()}</Text>
-                </View>
-              )}
+              <View style={styles.avatar}>
+                <Text style={styles.avatarLetter}>{(fullName || user?.email || 'U')[0].toUpperCase()}</Text>
+              </View>
             </View>
-            {/* Kamera ikonu */}
-            <View style={[styles.cameraIcon, { backgroundColor: isDarkMode ? '#334155' : '#F1F5F9', borderColor: isDarkMode ? '#475569' : '#E2E8F0' }]}>
-              <Ionicons name="camera-outline" size={12} color={isDarkMode ? '#94A3B8' : '#64748B'} />
-            </View>
-          </TouchableOpacity>
+          </View>
 
           {/* İsim & Email */}
           <Text style={[styles.userName, { color: colors.text }]} numberOfLines={1}>
