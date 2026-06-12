@@ -269,14 +269,29 @@ const ProfileScreen = ({ user, onLogout, scores, onResetTest, onUserUpdate }) =>
   useEffect(() => {
     const fetchProfile = async () => {
       if (!user?.token) return;
+
+      // 1. Önce cache'den anında yükle (gecikme olmadan göster)
+      try {
+        const cached = await AsyncStorage.getItem('profile_cache');
+        if (cached) {
+          setAuthData(JSON.parse(cached));
+        }
+      } catch (_) {}
+
+      // 2. Arka planda API'dan güncel veriyi çek
       setLoading(true);
       try {
         const response = await api.get('/auth/me', {
           headers: { Authorization: `Bearer ${user.token}` },
         });
-        setAuthData(response?.data?.data || null);
+        const fresh = response?.data?.data || null;
+        setAuthData(fresh);
+        // Cache'i güncelle
+        if (fresh) {
+          await AsyncStorage.setItem('profile_cache', JSON.stringify(fresh));
+        }
       } catch (error) {
-        setAuthData(null);
+        // Cache varsa eski veriyle devam et, yoksa null
       } finally {
         setLoading(false);
       }
@@ -318,13 +333,6 @@ const ProfileScreen = ({ user, onLogout, scores, onResetTest, onUserUpdate }) =>
             <View style={[styles.badge, { backgroundColor: isDarkMode ? '#1E3A5F' : '#EEF4FF' }]}>
               <Text style={styles.badgeText}>✦ OwnWay Üyesi</Text>
             </View>
-            {authData?.personality_type ? (
-              <View style={[styles.badge, { backgroundColor: isDarkMode ? '#1E3B2F' : '#F0FFF8', marginLeft: 8 }]}>
-                <Text style={[styles.badgeText, { color: isDarkMode ? '#6EE7B7' : '#059669' }]}>
-                  {authData.personality_type}
-                </Text>
-              </View>
-            ) : null}
           </View>
 
           {/* Bilgi Satırları */}
@@ -355,14 +363,22 @@ const ProfileScreen = ({ user, onLogout, scores, onResetTest, onUserUpdate }) =>
         {/* ── KİŞİLİK TİPİ KARTI ── */}
         {(() => {
           const RIASEC_MAP = {
+            // Tek harf karşılıkları
             R: { label: 'Gerçekçi', desc: 'El becerisi yüksek, pratik ve sistemli' },
             I: { label: 'Araştırmacı', desc: 'Analitik, meraklı ve problem çözücü' },
             A: { label: 'Sanatsal', desc: 'Yaratıcı, sezgisel ve özgün' },
             S: { label: 'Sosyal', desc: 'Empatik, yardımsever ve iletişimçi' },
             E: { label: 'Girişimci', desc: 'Lider ruhlu, ikna edici ve enerjik' },
             C: { label: 'Geleneksel', desc: 'Detaylı, organize ve güvenilir' },
+            // Tam İngilizce kelimeler (backend'in kaydettiği format)
+            REALISTIC: { label: 'Gerçekçi', desc: 'El becerisi yüksek, pratik ve sistemli' },
+            INVESTIGATIVE: { label: 'Araştırmacı', desc: 'Analitik, meraklı ve problem çözücü' },
+            ARTISTIC: { label: 'Sanatsal', desc: 'Yaratıcı, sezgisel ve özgün' },
+            SOCIAL: { label: 'Sosyal', desc: 'Empatik, yardımsever ve iletişimçi' },
+            ENTERPRISING: { label: 'Girişimci', desc: 'Lider ruhlu, ikna edici ve enerjik' },
+            CONVENTIONAL: { label: 'Geleneksel', desc: 'Detaylı, organize ve güvenilir' },
           };
-          const pType = authData?.personality_type;
+          const pType = authData?.profile?.personality_type;
           const info = pType ? RIASEC_MAP[pType] : null;
           return (
             <View style={[styles.personalityCard, { backgroundColor: isDarkMode ? '#1E293B' : '#FFFFFF', borderColor: isDarkMode ? '#334155' : '#EEF3FB' }]}>
@@ -536,7 +552,7 @@ const ProfileScreen = ({ user, onLogout, scores, onResetTest, onUserUpdate }) =>
             <Animated.View style={[styles.modalSheet, { transform: [{ translateY: slideAnim }] }]}>
               <View style={styles.modalHeader}>
                 <View style={styles.modalDrag} />
-                <Text style={styles.modalTitle}>✏️ Profil Bilgilerini Düzenle</Text>
+                <Text style={styles.modalTitle}>Profil Bilgilerini Düzenle</Text>
                 <Text style={styles.modalSub}>Bilgilerini güncelleyerek profilini kişiselleştir</Text>
               </View>
 

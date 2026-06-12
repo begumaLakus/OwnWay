@@ -32,13 +32,13 @@ export default function AdminUniversitiesTab({ cities, setCities, stats, setStat
           ...c,
           universities: c.universities?.map(u => u.id === editTarget.id ? { ...u, ...res.data.data } : u) || []
         })));
-        Alert.alert('✅','Üniversite güncellendi.');
+        Alert.alert('Başarılı','Üniversite güncellendi.');
       } else {
         const res = await api.post('/admin/universities', payload, { headers });
         const newUni = { ...res.data.data, departments: [] };
         setCities(prev => prev.map(c => c.id === newUni.city_id ? { ...c, universities: [...(c.universities||[]), newUni] } : c));
         if (stats) setStats(p => ({ ...p, totalUniversities: p.totalUniversities + 1 }));
-        Alert.alert('✅','Üniversite eklendi.');
+        Alert.alert('Başarılı','Üniversite eklendi.');
       }
       setModalVisible(false);
     } catch (e) {
@@ -48,7 +48,7 @@ export default function AdminUniversitiesTab({ cities, setCities, stats, setStat
 
   const handleDelete = (uni) => {
     const deptCount = uni.departments?.length || 0;
-    Alert.alert('Üniversite Sil', `"${uni.uni_name}" silinsin mi?\n${deptCount>0?`⚠️ ${deptCount} bölüm de silinecek!`:''}`, [
+    Alert.alert('Üniversite Sil', `"${uni.uni_name}" silinsin mi?\n${deptCount>0?`Dikkat: ${deptCount} bölüm de silinecek!`:''}`, [
       { text: 'Vazgeç', style: 'cancel' },
       { text: 'Sil', style: 'destructive', onPress: async () => {
         try {
@@ -56,7 +56,7 @@ export default function AdminUniversitiesTab({ cities, setCities, stats, setStat
           await api.delete(`/admin/universities/${uni.id}`, { headers });
           setCities(prev => prev.map(c => ({ ...c, universities: c.universities?.filter(u => u.id !== uni.id)||[] })));
           if (stats) setStats(p => ({ ...p, totalUniversities: p.totalUniversities - 1, totalDepartments: p.totalDepartments - (uni.departments?.length||0) }));
-          Alert.alert('✅','Üniversite silindi.');
+          Alert.alert('Başarılı','Üniversite silindi.');
         } catch (e) {
           Alert.alert('Hata', e?.response?.data?.message||'Silinemedi.');
         } finally { setDeletingId(null); }
@@ -67,7 +67,7 @@ export default function AdminUniversitiesTab({ cities, setCities, stats, setStat
   return (
     <View>
       <TouchableOpacity style={s.addBtn} onPress={openCreate}>
-        <Text style={s.addBtnTxt}>➕ Yeni Üniversite Ekle</Text>
+        <Text style={s.addBtnTxt}>Yeni Üniversite Ekle</Text>
       </TouchableOpacity>
 
       {cities.map(c => {
@@ -77,7 +77,7 @@ export default function AdminUniversitiesTab({ cities, setCities, stats, setStat
         return (
           <View key={c.id} style={s.groupCard}>
             <TouchableOpacity style={s.groupHeader} onPress={() => setExpandedCity(isExpanded ? null : c.id)}>
-              <Text style={s.groupTitle}>🏙️ {c.city_name}</Text>
+              <Text style={s.groupTitle}>{c.city_name}</Text>
               <Text style={s.groupCount}>{unis.length} üni  {isExpanded ? '▲' : '▼'}</Text>
             </TouchableOpacity>
             {isExpanded && unis.map(uni => (
@@ -87,10 +87,10 @@ export default function AdminUniversitiesTab({ cities, setCities, stats, setStat
                   <Text style={s.uniMeta}>{uni.uni_type||'—'} • {uni.departments?.length||0} bölüm</Text>
                 </View>
                 <TouchableOpacity style={s.editBtn} onPress={() => openEdit(uni)}>
-                  <Text>✏️</Text>
+                  <Text style={s.editBtnTxt}>Düzenle</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={s.delBtn} onPress={() => handleDelete(uni)} disabled={deletingId===uni.id}>
-                  {deletingId===uni.id ? <ActivityIndicator size="small" color={C.danger}/> : <Text>🗑️</Text>}
+                  {deletingId===uni.id ? <ActivityIndicator size="small" color={C.danger}/> : <Text style={s.delBtnTxt}>Sil</Text>}
                 </TouchableOpacity>
               </View>
             ))}
@@ -102,7 +102,7 @@ export default function AdminUniversitiesTab({ cities, setCities, stats, setStat
         <View style={s.overlay}>
           <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined} style={s.sheet}>
             <View style={s.drag} />
-            <Text style={s.modalTitle}>{editTarget ? '✏️ Üniversite Düzenle' : '➕ Yeni Üniversite'}</Text>
+            <Text style={s.modalTitle}>{editTarget ? 'Üniversite Düzenle' : 'Yeni Üniversite'}</Text>
             <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 420 }}>
               <Text style={s.label}>Şehir Seç</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 4 }}>
@@ -150,8 +150,10 @@ const s = StyleSheet.create({
   uniRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border, gap: 8 },
   uniName: { fontSize: 13, fontWeight: '600', color: C.text },
   uniMeta: { fontSize: 11, color: C.muted, marginTop: 2 },
-  editBtn: { backgroundColor: 'rgba(108,99,255,.15)', borderRadius: 8, padding: 8 },
-  delBtn: { backgroundColor: 'rgba(255,92,108,.1)', borderRadius: 8, padding: 8 },
+  editBtn: { backgroundColor: 'rgba(108,99,255,.15)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+  editBtnTxt: { color: '#6C63FF', fontSize: 12, fontWeight: '600' },
+  delBtn: { backgroundColor: 'rgba(255,92,108,.1)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+  delBtnTxt: { color: '#FF5C6C', fontSize: 12, fontWeight: '600' },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: C.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
   drag: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: C.border, marginBottom: 16 },

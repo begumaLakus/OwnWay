@@ -48,12 +48,12 @@ export default function AdminCitiesTab({ cities, setCities, stats, setStats, hea
       if (editTarget) {
         const res = await api.put(`/admin/cities/${editTarget.id}`, form, { headers });
         setCities(prev => prev.map(c => c.id === editTarget.id ? { ...c, ...res.data.data } : c));
-        Alert.alert('✅', 'Şehir güncellendi.');
+        Alert.alert('Başarılı', 'Şehir güncellendi.');
       } else {
         const res = await api.post('/admin/cities', form, { headers });
         setCities(prev => [...prev, { ...res.data.data, universities: [] }]);
         if (stats) setStats(p => ({ ...p, totalCities: p.totalCities + 1 }));
-        Alert.alert('✅', 'Şehir eklendi.');
+        Alert.alert('Başarılı', 'Şehir eklendi.');
       }
       setModalVisible(false);
     } catch (e) {
@@ -63,7 +63,7 @@ export default function AdminCitiesTab({ cities, setCities, stats, setStats, hea
 
   const handleDelete = (c) => {
     const uniCount = c.universities?.length || 0;
-    Alert.alert('Şehir Sil', `"${c.city_name}" silinsin mi?\n${uniCount > 0 ? `⚠️ ${uniCount} üniversite ve bölümleri de silinecek!` : ''}`, [
+    Alert.alert('Şehir Sil', `"${c.city_name}" silinsin mi?\n${uniCount > 0 ? `Dikkat: ${uniCount} üniversite ve bölümleri de silinecek!` : ''}`, [
       { text: 'Vazgeç', style: 'cancel' },
       { text: 'Sil', style: 'destructive', onPress: async () => {
         try {
@@ -71,7 +71,7 @@ export default function AdminCitiesTab({ cities, setCities, stats, setStats, hea
           await api.delete(`/admin/cities/${c.id}`, { headers });
           setCities(prev => prev.filter(x => x.id !== c.id));
           if (stats) setStats(p => ({ ...p, totalCities: p.totalCities - 1 }));
-          Alert.alert('✅', 'Şehir silindi.');
+          Alert.alert('Başarılı', 'Şehir silindi.');
         } catch (e) {
           Alert.alert('Hata', e?.response?.data?.message || 'Silinemedi.');
         } finally { setDeletingId(null); }
@@ -82,7 +82,7 @@ export default function AdminCitiesTab({ cities, setCities, stats, setStats, hea
   return (
     <View>
       <TouchableOpacity style={s.addBtn} onPress={openCreate}>
-        <Text style={s.addBtnTxt}>➕ Yeni Şehir Ekle</Text>
+        <Text style={s.addBtnTxt}>Yeni Şehir Ekle</Text>
       </TouchableOpacity>
 
       {cities.map(c => {
@@ -103,10 +103,10 @@ export default function AdminCitiesTab({ cities, setCities, stats, setStats, hea
               </View>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <TouchableOpacity style={s.editBtn} onPress={() => openEdit(c)}>
-                  <Text style={s.editBtnTxt}>✏️</Text>
+                  <Text style={s.editBtnTxt}>Düzenle</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={s.delBtn} onPress={() => handleDelete(c)} disabled={deletingId === c.id}>
-                  {deletingId === c.id ? <ActivityIndicator size="small" color={C.danger} /> : <Text style={s.delBtnTxt}>🗑️</Text>}
+                  {deletingId === c.id ? <ActivityIndicator size="small" color={C.danger} /> : <Text style={s.delBtnTxt}>Sil</Text>}
                 </TouchableOpacity>
               </View>
             </View>
@@ -127,7 +127,7 @@ export default function AdminCitiesTab({ cities, setCities, stats, setStats, hea
         <View style={s.overlay}>
           <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined} style={s.sheet}>
             <View style={s.drag} />
-            <Text style={s.modalTitle}>{editTarget ? '✏️ Şehir Düzenle' : '➕ Yeni Şehir'}</Text>
+            <Text style={s.modalTitle}>{editTarget ? 'Şehir Düzenle' : 'Yeni Şehir'}</Text>
             <ScrollView showsVerticalScrollIndicator={false}>
               <CityForm form={form} setForm={setForm} />
             </ScrollView>
