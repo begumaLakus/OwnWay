@@ -11,10 +11,9 @@ import AdminDepartmentsTab from './AdminDepartmentsTab';
 
 const C = { bg:'#0F1117', surface:'#1A1D27', surface2:'#222636', border:'#2E3347', accent:'#6C63FF', teal:'#4ECDC4', warn:'#FFB347', danger:'#FF5C6C', success:'#4CAF7D', text:'#E8EAF6', muted:'#8B90A7' };
 
-function StatCard({ icon, label, value, color }) {
+function StatCard({ label, value, color }) {
   return (
     <View style={[s.statCard, { borderTopColor: color, borderTopWidth: 3 }]}>
-      <Text style={s.statIcon}>{icon}</Text>
       <Text style={[s.statValue, { color }]}>{value ?? '—'}</Text>
       <Text style={s.statLabel}>{label}</Text>
     </View>
@@ -22,11 +21,11 @@ function StatCard({ icon, label, value, color }) {
 }
 
 const TABS = [
-  { key: 'dashboard', icon: '📊', label: 'Dashboard' },
-  { key: 'users',     icon: '👥', label: 'Kullanıcılar' },
-  { key: 'cities',    icon: '🏙️',  label: 'Şehirler' },
-  { key: 'unis',      icon: '🎓', label: 'Üniversiteler' },
-  { key: 'depts',     icon: '📚', label: 'Bölümler' },
+  { key: 'dashboard', label: 'Dashboard' },
+  { key: 'users',     label: 'Kullanıcılar' },
+  { key: 'cities',    label: 'Şehirler' },
+  { key: 'unis',      label: 'Üniversiteler' },
+  { key: 'depts',     label: 'Bölümler' },
 ];
 
 export default function AdminScreen({ user, onLogout }) {
@@ -84,13 +83,13 @@ export default function AdminScreen({ user, onLogout }) {
         return (
           <View>
             <View style={s.statsGrid}>
-              <StatCard icon="👥" label="Kullanıcı"    value={stats?.totalUsers}       color={C.accent} />
-              <StatCard icon="🏙️" label="Şehir"        value={stats?.totalCities}      color={C.teal} />
-              <StatCard icon="🎓" label="Üniversite"   value={stats?.totalUniversities} color={C.warn} />
-              <StatCard icon="📚" label="Bölüm"        value={stats?.totalDepartments} color={C.success} />
+              <StatCard label="Kullanıcı"    value={stats?.totalUsers}       color={C.accent} />
+              <StatCard label="Şehir"        value={stats?.totalCities}      color={C.teal} />
+              <StatCard label="Üniversite"   value={stats?.totalUniversities} color={C.warn} />
+              <StatCard label="Bölüm"        value={stats?.totalDepartments} color={C.success} />
             </View>
             <View style={s.card}>
-              <Text style={s.cardTitle}>📋 Son Kayıtlı Kullanıcılar</Text>
+              <Text style={s.cardTitle}>Son Kayıtlı Kullanıcılar</Text>
               {users.slice(-5).reverse().map(u => {
                 const name = `${u.profile?.first_name||''} ${u.profile?.last_name||''}`.trim();
                 const isAdmin = u.role === 'ADMIN';
@@ -122,7 +121,7 @@ export default function AdminScreen({ user, onLogout }) {
       {/* HEADER */}
       <View style={s.header}>
         <View>
-          <Text style={s.headerTitle}>🛡️ Admin Paneli</Text>
+          <Text style={s.headerTitle}>Admin Paneli</Text>
           <Text style={s.headerSub}>OwnWay Yönetim Sistemi</Text>
         </View>
         <TouchableOpacity style={s.logoutBtn} onPress={onLogout}>
@@ -134,7 +133,7 @@ export default function AdminScreen({ user, onLogout }) {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.tabBarWrap} contentContainerStyle={s.tabBar}>
         {TABS.map(t => (
           <TouchableOpacity key={t.key} style={[s.tab, tab===t.key&&s.tabActive]} onPress={() => setTab(t.key)}>
-            <Text style={[s.tabTxt, tab===t.key&&s.tabTxtActive]}>{t.icon} {t.label}</Text>
+            <Text style={[s.tabTxt, tab===t.key&&s.tabTxtActive]}>{t.label}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>

@@ -25,7 +25,7 @@ export default function AdminUsersTab({ users, setUsers, stats, setStats, header
           await api.delete(`/admin/users/${u.id}`, { headers });
           setUsers(prev => prev.filter(x => x.id !== u.id));
           if (stats) setStats(prev => ({ ...prev, totalUsers: prev.totalUsers - 1 }));
-          Alert.alert('✅', 'Kullanıcı silindi.');
+          Alert.alert('Başarılı', 'Kullanıcı silindi.');
         } catch (e) {
           Alert.alert('Hata', e?.response?.data?.message || 'Silinemedi.');
         } finally { setLoadingId(null); }
@@ -52,7 +52,7 @@ export default function AdminUsersTab({ users, setUsers, stats, setStats, header
 
   return (
     <View style={s.card}>
-      <TextInput style={s.search} placeholder="🔍  İsim veya e-posta ara..." placeholderTextColor={C.muted} value={search} onChangeText={setSearch} />
+      <TextInput style={s.search} placeholder="İsim veya e-posta ara..." placeholderTextColor={C.muted} value={search} onChangeText={setSearch} />
       <Text style={s.count}>{filtered.length} kullanıcı</Text>
       <ScrollView>
         {filtered.map(u => {
@@ -68,7 +68,7 @@ export default function AdminUsersTab({ users, setUsers, stats, setStats, header
               <View style={{ flex: 1 }}>
                 <Text style={s.name}>{name}</Text>
                 <Text style={s.email}>{u.email}</Text>
-                {u.profile?.current_location ? <Text style={s.loc}>📍 {u.profile.current_location}</Text> : null}
+                {u.profile?.current_location ? <Text style={s.loc}>{u.profile.current_location}</Text> : null}
               </View>
               <View style={{ alignItems: 'flex-end', gap: 6 }}>
                 <TouchableOpacity style={[s.roleBadge, { backgroundColor: isAdmin ? 'rgba(108,99,255,.2)' : 'rgba(78,205,196,.15)' }]} onPress={() => handleRoleToggle(u)} disabled={!!loadingId}>
@@ -76,7 +76,7 @@ export default function AdminUsersTab({ users, setUsers, stats, setStats, header
                 </TouchableOpacity>
                 {!isAdmin && (
                   <TouchableOpacity style={s.delBtn} onPress={() => handleDelete(u)} disabled={!!loadingId}>
-                    {delLoading ? <ActivityIndicator size="small" color={C.danger} /> : <Text style={s.delTxt}>🗑 Sil</Text>}
+                    {delLoading ? <ActivityIndicator size="small" color={C.danger} /> : <Text style={s.delTxt}>Sil</Text>}
                   </TouchableOpacity>
                 )}
               </View>

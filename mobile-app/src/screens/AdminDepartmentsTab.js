@@ -38,7 +38,7 @@ export default function AdminDepartmentsTab({ cities, setCities, stats, setStats
             departments: u.departments?.map(d => d.id===editTarget.id ? { ...d, ...res.data.data } : d) || []
           })) || []
         })));
-        Alert.alert('✅','Bölüm güncellendi.');
+        Alert.alert('Başarılı','Bölüm güncellendi.');
       } else {
         const res = await api.post('/admin/departments', payload, { headers });
         const newDept = res.data.data;
@@ -47,7 +47,7 @@ export default function AdminDepartmentsTab({ cities, setCities, stats, setStats
           universities: c.universities?.map(u => u.id===newDept.uni_id ? { ...u, departments: [...(u.departments||[]), newDept] } : u) || []
         })));
         if (stats) setStats(p => ({ ...p, totalDepartments: p.totalDepartments + 1 }));
-        Alert.alert('✅','Bölüm eklendi.');
+        Alert.alert('Başarılı','Bölüm eklendi.');
       }
       setModalVisible(false);
     } catch (e) {
@@ -67,7 +67,7 @@ export default function AdminDepartmentsTab({ cities, setCities, stats, setStats
             universities: c.universities?.map(u => u.id===uniId ? { ...u, departments: u.departments?.filter(d => d.id!==dept.id)||[] } : u) || []
           })));
           if (stats) setStats(p => ({ ...p, totalDepartments: p.totalDepartments - 1 }));
-          Alert.alert('✅','Bölüm silindi.');
+          Alert.alert('Başarılı','Bölüm silindi.');
         } catch (e) {
           Alert.alert('Hata', e?.response?.data?.message||'Silinemedi.');
         } finally { setDeletingId(null); }
@@ -78,7 +78,7 @@ export default function AdminDepartmentsTab({ cities, setCities, stats, setStats
   return (
     <View>
       <TouchableOpacity style={s.addBtn} onPress={openCreate}>
-        <Text style={s.addBtnTxt}>➕ Yeni Bölüm Ekle</Text>
+        <Text style={s.addBtnTxt}>Yeni Bölüm Ekle</Text>
       </TouchableOpacity>
 
       {allUnis.map(uni => {
@@ -101,10 +101,10 @@ export default function AdminDepartmentsTab({ cities, setCities, stats, setStats
                   <Text style={s.deptMeta}>{dept.language||'—'} • Kota: {dept.quota||'—'} • Baz: {dept.base_score||'—'}</Text>
                 </View>
                 <TouchableOpacity style={s.editBtn} onPress={() => openEdit(dept, uni.id)}>
-                  <Text>✏️</Text>
+                  <Text style={s.editBtnTxt}>Düzenle</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={s.delBtn} onPress={() => handleDelete(dept, uni.id)} disabled={deletingId===dept.id}>
-                  {deletingId===dept.id ? <ActivityIndicator size="small" color={C.danger}/> : <Text>🗑️</Text>}
+                  {deletingId===dept.id ? <ActivityIndicator size="small" color={C.danger}/> : <Text style={s.delBtnTxt}>Sil</Text>}
                 </TouchableOpacity>
               </View>
             ))}
@@ -116,7 +116,7 @@ export default function AdminDepartmentsTab({ cities, setCities, stats, setStats
         <View style={s.overlay}>
           <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined} style={s.sheet}>
             <View style={s.drag} />
-            <Text style={s.modalTitle}>{editTarget ? '✏️ Bölüm Düzenle' : '➕ Yeni Bölüm'}</Text>
+            <Text style={s.modalTitle}>{editTarget ? 'Bölüm Düzenle' : 'Yeni Bölüm'}</Text>
             <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 460 }}>
               <Text style={s.label}>Üniversite Seç</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 4 }}>
@@ -172,8 +172,10 @@ const s = StyleSheet.create({
   deptRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 10, borderTopWidth: 1, borderTopColor: C.border, gap: 8 },
   deptName: { fontSize: 13, fontWeight: '600', color: C.text },
   deptMeta: { fontSize: 11, color: C.muted, marginTop: 2 },
-  editBtn: { backgroundColor: 'rgba(108,99,255,.15)', borderRadius: 8, padding: 8 },
-  delBtn: { backgroundColor: 'rgba(255,92,108,.1)', borderRadius: 8, padding: 8 },
+  editBtn: { backgroundColor: 'rgba(108,99,255,.15)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+  editBtnTxt: { color: '#6C63FF', fontSize: 12, fontWeight: '600' },
+  delBtn: { backgroundColor: 'rgba(255,92,108,.1)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+  delBtnTxt: { color: '#FF5C6C', fontSize: 12, fontWeight: '600' },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: C.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
   drag: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: C.border, marginBottom: 16 },
